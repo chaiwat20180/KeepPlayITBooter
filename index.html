@@ -1051,7 +1051,7 @@
                 if(b.tagColor === 'red') tagClass = 'bg-rose-500 text-white';
                 if(b.tagColor === 'blue') tagClass = 'bg-sky-500 text-white';
                 
-                const html = `<div class="banner-slide ${index === 0 ? 'active' : ''} bg-gradient-to-r ${b.bgGradient || 'from-slate-800 to-slate-900'} flex items-center px-8 sm:px-16"><div class="text-white z-20 w-full md:w-2/3 drop-shadow-lg">${b.tagText ? `<span class="${tagClass} text-[10px] sm:text-xs font-bold px-2 py-1 rounded mb-3 inline-block shadow-sm tracking-wider uppercase">${b.tagText}</span>` : ''}<h2 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">${b.title}</h2><p class="text-slate-200 text-sm sm:text-base opacity-90">${b.subtitle}</p></div>${visual}</div>`;
+                const html = `<div class="banner-slide ${index === 0 ? 'active' : ''} bg-gradient-to-r ${b.bgGradient || 'from-slate-800 to-slate-900'} flex items-center px-8 sm:px-16"><div class="text-white z-20 w-full md:w-2/3 drop-shadow-lg">${b.tagText ? `<span class="${tagClass} text-[10px] sm:text-xs font-bold px-2 py-1 rounded mb-3 inline-block shadow-sm tracking-wider uppercase">${b.tagText}</span>` : ''}<h2 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">${b.title}</h2><p class="text-slate-200 text-sm sm:text-base opacity-90">${b.subtitle.replace(/\n/g, '<br>')}</p></div>${visual}</div>`;
                 container.append(html);
             });
             currentBanner = 0;
