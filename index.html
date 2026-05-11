@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Booster Manager Pro</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Kanit', 'sans-serif'], },
+                    colors: {
+                        'gaming-accent': '#8b5cf6', 
+                        'gaming-accent-hover': '#7c3aed',
+                        'gaming-success': '#10b981',
+                        'gaming-warning': '#f59e0b',
+                        'gaming-dark': '#0f172a',
+                        'gaming-card': '#1e293b'
+                    },
+                    keyframes: {
+                        'gradient-xy': {
+                            '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
+                            '50%': { 'background-size': '200% 200%', 'background-position': 'right center' }
+                        }
+                    },
+                    animation: { 'gradient-xy': 'gradient-xy 3s ease infinite', }
+                }
+            }
+        }
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body, div, nav, input, select, button, span, a, label { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+        
+        .glass-effect { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .dark .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        .masked-text { font-family: monospace; letter-spacing: 1px; }
+        .masked-dot { letter-spacing: 2px; font-size: 1.2em; line-height: 0.8; }
+
+        .banner-container { position: relative; overflow: hidden; box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.3); }
+        .banner-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.6s ease-in-out, transform 0.6s ease; transform: scale(1.05); z-index: 0; }
+        .banner-slide.active { opacity: 1; z-index: 10; transform: scale(1); }
+
+        .ts-wrapper { width: 100%; }
+        .ts-control { border-radius: 0.5rem; padding: 0.5rem 0.75rem; border-color: #e2e8f0; min-height: 44px; display: flex; align-items: center; font-size: 0.95rem; background-color: #f8fafc; }
+        .dark .ts-control { background-color: #0f172a; border-color: #334155; color: #e2e8f0; }
+        .dark .ts-control input { color: white; }
+        .ts-dropdown { z-index: 9999 !important; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); } 
+        .dark .ts-dropdown { background-color: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+        .ts-dropdown .dropdown-input-wrap { padding: 8px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; }
+        .dark .ts-dropdown .dropdown-input-wrap { background: #0f172a; border-bottom: 1px solid #334155; }
+        .ts-dropdown .dropdown-input { border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 10px; width: 100%; outline: none; }
+        .dark .ts-dropdown .dropdown-input { background: #1e293b; border: 1px solid #475569; color: white; }
+        .dark .ts-dropdown .option.active, .dark .ts-dropdown .option:hover { background-color: #334155; color: #fff; }
+        .dark .ts-dropdown .option.selected { background-color: #8b5cf6; color: #fff; }
+        
+        #bannerModal, #orderModal { z-index: 50; }
+        #imagePreviewModal { z-index: 60; }
+        #confirmModal { z-index: 99999 !important; } 
+        #confirmModal .confirm-overlay { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); }
+        #confirmModal .confirm-box { border-top: 4px solid #ef4444; }
+
+        .confirm-open .ts-dropdown { display: none !important; }
+
+        .status-badge { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); font-weight: 600; border-width: 1px; letter-spacing: 0.5px; }
+        .rank-animated-bg { background-size: 200% 200%; animation: gradient-xy 3s ease infinite; color: white; border: none; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .super-vvip-bg { background: linear-gradient(270deg, #4f46e5, #c026d3, #db2777); box-shadow: 0 4px 15px rgba(192, 38, 211, 0.4); }
+        .vvip-bg { background: linear-gradient(270deg, #7c3aed, #d946ef, #7c3aed); box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3); }
+        .vip-bg { background: linear-gradient(270deg, #d97706, #fbbf24, #b45309); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); }
+        .special-bg { background: linear-gradient(270deg, #db2777, #f43f5e, #9f1239); box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3); }
+        .urgent-bg { background: linear-gradient(270deg, #dc2626, #ef4444, #991b1b); animation-duration: 1.5s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); }
+
+        .progress-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        input:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+        .dark input:disabled { background-color: #0f172a; color: #475569; }
+        .rank-radio:checked + div { border-color: #8b5cf6; background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6; box-shadow: inset 0 0 0 1px #8b5cf6; }
+        .dark .rank-radio:checked + div { background-color: rgba(139, 92, 246, 0.2); color: #a78bfa; box-shadow: inset 0 0 0 1px #a78bfa; }
+        .order-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .order-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .dark .order-card:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.4); }
+    </style>
+</head>
+<body class="font-sans min-h-screen pb-20 bg-[#f8fafc] text-slate-800 dark:bg-gaming-dark dark:text-slate-200 transition-colors duration-300 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
+
+    <nav class="sticky top-0 z-40 glass-effect border-b border-gray-200/50 dark:border-slate-700/50 shadow-sm bg-white/70 dark:bg-gaming-dark/70">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-gaming-accent to-fuchsia-500 p-2.5 rounded-xl shadow-lg shadow-purple-500/30">
+                        <i class="fa-solid fa-gamepad text-white text-xl sm:text-2xl"></i>
+                    </div>
+                    <span class="font-bold text-xl sm:text-2xl tracking-wide text-slate-800 dark:text-white hidden sm:inline">KeepPlayIT<span class="text-transparent bg-clip-text bg-gradient-to-r from-gaming-accent to-fuchsia-500">Master</span></span>
+                </div>
+                
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <div class="hidden md:flex gap-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-slate-700">
+                        <button type="button" onclick="exportData()" class="px-3 py-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition text-sm font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-file-export"></i> <span>Backup</span>
+                        </button>
+                        <button type="button" onclick="triggerImport()" class="px-3 py-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-sky-500 transition text-sm font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-file-import"></i> <span>Restore</span>
+                        </button>
+                        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
+                    </div>
+
+                    <button type="button" onclick="toggleTheme()" class="w-10 h-10 flex justify-center items-center rounded-full bg-gray-100 text-slate-500 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                        <i class="fa-solid fa-moon hidden dark:block text-indigo-300"></i>
+                        <i class="fa-solid fa-sun block dark:hidden text-amber-500"></i>
+                    </button>
+
+                    <button type="button" onclick="openBannerManager()" class="w-10 h-10 sm:w-auto sm:px-4 flex justify-center items-center rounded-full sm:rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition shadow-lg border border-slate-700 text-sm gap-2">
+                        <i class="fa-solid fa-images"></i>
+                        <span class="hidden sm:inline font-medium">Banners</span>
+                    </button>
+
+                    <button type="button" onclick="openModal()" class="bg-gradient-to-r from-gaming-accent to-fuchsia-500 hover:from-gaming-accent-hover hover:to-fuchsia-600 text-white w-10 h-10 sm:w-auto sm:px-5 flex justify-center items-center rounded-full sm:rounded-lg transition shadow-lg shadow-purple-500/30 gap-2 font-medium">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="hidden sm:inline">เพิ่มงานจ้าง</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <div id="bannerContainer" class="banner-container w-full h-40 sm:h-56 rounded-2xl overflow-hidden bg-slate-900 group relative border border-slate-700">
+            <button class="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-gaming-accent backdrop-blur-sm text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all z-30" onclick="manualChangeBanner(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-gaming-accent backdrop-blur-sm text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all z-30" onclick="manualChangeBanner(1)"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-blue-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">งานทั้งหมด</p>
+                <div class="flex justify-between items-end">
+                    <h3 class="text-3xl font-bold text-slate-800 dark:text-white" id="stat-total">0</h3>
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"><i class="fa-solid fa-layer-group text-blue-500 text-sm"></i></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-slate-400 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">รอดำเนินการ</p>
+                <div class="flex justify-between items-end">
+                    <h3 class="text-3xl font-bold text-slate-700 dark:text-slate-300" id="stat-pending">0</h3>
+                    <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><i class="fa-regular fa-clock text-slate-500 text-sm"></i></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-amber-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">กำลังดำเนินการ</p>
+                <div class="flex justify-between items-end">
+                    <h3 class="text-3xl font-bold text-amber-500" id="stat-active">0</h3>
+                    <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><i class="fa-solid fa-gamepad text-amber-500 text-sm"></i></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-emerald-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">เสร็จสิ้น</p>
+                <div class="flex justify-between items-end">
+                    <h3 class="text-3xl font-bold text-emerald-500" id="stat-completed">0</h3>
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"><i class="fa-solid fa-check-circle text-emerald-500 text-sm"></i></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-rose-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">ยกเลิก</p>
+                <div class="flex justify-between items-end">
+                    <h3 class="text-3xl font-bold text-rose-500" id="stat-canceled">0</h3>
+                    <div class="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center"><i class="fa-solid fa-ban text-rose-500 text-sm"></i></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-gaming-accent group cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all hover:-translate-y-1 flex flex-col justify-between relative overflow-hidden" onclick="toggleRevenue()">
+                <div class="absolute -right-4 -top-4 w-16 h-16 bg-gaming-accent/10 rounded-full blur-xl group-hover:bg-gaming-accent/20 transition-all"></div>
+                <div class="flex items-center gap-2 mb-2 z-10">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">รายได้รวม</p>
+                    <i class="fa-solid fa-eye-slash text-[10px] bg-slate-100 dark:bg-slate-800 p-1 rounded text-slate-400 group-hover:text-gaming-accent transition-colors" id="revenue-eye"></i>
+                </div>
+                <div class="flex justify-between items-end z-10">
+                    <h3 class="text-2xl xl:text-3xl font-bold text-gaming-accent select-none truncate" id="stat-revenue">฿*****</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-3 mt-8">
+            <h4 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="fa-solid fa-chart-line text-gaming-accent"></i> Analytics Dashboard</h4>
+            <div class="flex items-center gap-3">
+                <button id="toggleDashboardBtn" type="button" onclick="toggleDashboard()" class="text-xs bg-white dark:bg-gaming-card text-slate-600 dark:text-slate-300 px-4 py-1.5 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition shadow-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-eye-slash"></i> <span>ซ่อน</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="dashboardSection" class="glass-card p-6 rounded-2xl shadow-sm mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">รายได้เข้าจริง (หักยกเลิก)</p>
+                    <div id="dash-totalRevenue" class="text-3xl font-bold text-emerald-500 mt-2">฿0</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">คำสั่งซื้อที่นับรวม</p>
+                    <div id="dash-totalOrders" class="text-3xl font-bold text-slate-800 dark:text-white mt-2">0</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">วันทำงานสะสม (Days)</p>
+                    <div id="dash-totalDays" class="text-3xl font-bold text-sky-500 mt-2">0</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white dark:bg-[#0f172a]/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700">
+                    <h5 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">แนวโน้มรายได้</h5>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-[#0f172a]/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h5 class="text-sm font-bold text-slate-700 dark:text-slate-300">สรุปรายเดือน</h5>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportSelectedMonths()" class="text-[11px] bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-400 px-2.5 py-1.5 rounded-md transition shadow-sm font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-file-export"></i> Export เลือก
+                            </button>
+                            <button onclick="exportSummaryFiltered()" class="text-[11px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-800/50 px-2.5 py-1.5 rounded-md transition flex items-center gap-1 font-medium shadow-sm">
+                                <i class="fa-solid fa-download"></i> All View
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar max-h-[250px] pr-2">
+                        <table class="w-full text-sm">
+                            <thead class="sticky top-0 bg-white dark:bg-[#0f172a] z-10">
+                                <tr class="text-slate-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+                                    <th class="w-8 py-2 pl-2"><input type="checkbox" id="checkAllMonths" class="accent-gaming-accent cursor-pointer rounded" onchange="toggleAllMonths(this)"></th>
+                                    <th class="text-left py-2 font-medium">เดือน</th>
+                                    <th class="text-right py-2 font-medium">รายได้</th>
+                                    <th class="text-right py-2 font-medium">งาน</th>
+                                    <th class="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-monthly" class="text-slate-700 dark:text-slate-200"></tbody>
+                        </table>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2 text-center"><i class="fa-solid fa-info-circle mr-1"></i>คลิกที่ชื่อเดือนเพื่อกรอง/ยกเลิกกรอง</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl shadow-sm mb-6 border border-gray-100 dark:border-slate-700 relative z-20">
+            <div class="flex justify-between items-center mb-4">
+                 <h4 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="fa-solid fa-sliders text-gaming-accent"></i> ตัวกรองค้นหา & ส่งออก</h4>
+                 <button onclick="resetFilters()" class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors font-medium">
+                     <i class="fa-solid fa-rotate-right"></i> ล้างค่า
+                 </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div class="lg:col-span-1">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">ค้นหา</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10"></i>
+                        <input type="text" id="searchInput" placeholder="ชื่อเกม, ลูกค้า..." class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg pl-9 pr-3 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent transition text-sm">
+                    </div>
+                </div>
+                <div class="lg:col-span-1">
+                    <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-regular fa-calendar-check mr-1"></i>ช่วงเวลาด่วน</label>
+                    <select id="quickTimeFilter" class="w-full" autocomplete="off" onchange="applyQuickTimeFilter()">
+                        <option value="">-- กำหนดเอง --</option>
+                        <option value="this_month">เดือนนี้</option>
+                        <option value="last_month">เดือนที่แล้ว</option>
+                        <option value="this_year">ปีนี้</option>
+                        <option value="all">ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-1">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">ช่วงเวลา (เริ่ม - สิ้นสุด)</label>
+                    <div class="flex gap-1">
+                        <input type="text" id="filterStartDate" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 text-sm" placeholder="จากวันที่">
+                        <input type="text" id="filterEndDate" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 text-sm" placeholder="ถึงวันที่">
+                    </div>
+                </div>
+                <div class="lg:col-span-1">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">เกม</label>
+                    <select id="filterGame" class="w-full" placeholder="เลือกเกม..." multiple autocomplete="off"></select>
+                </div>
+                <div class="lg:col-span-1">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">สถานะ</label>
+                    <select id="filterStatus" class="w-full" placeholder="สถานะทั้งหมด" autocomplete="off">
+                        <option value="all">สถานะทั้งหมด</option>
+                        <option value="pending">⏳ รอดำเนินการ</option>
+                        <option value="active">🎮 กำลังเล่น</option>
+                        <option value="completed">✅ เสร็จสิ้น</option>
+                        <option value="canceled">❌ ยกเลิก</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-1">
+                    <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-solid fa-sort mr-1"></i>เรียงลำดับ</label>
+                    <select id="sortOrder" class="w-full" autocomplete="off" onchange="renderOrders()">
+                        <option value="newest">อัปเดตล่าสุด</option>
+                        <option value="oldest">เก่าสุดก่อน</option>
+                        <option value="price_desc">ราคาสูง - ต่ำ</option>
+                        <option value="price_asc">ราคาต่ำ - สูง</option>
+                        <option value="urgency">ความสำคัญ (Rank)</option>
+                    </select>
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-3"><i class="fa-solid fa-circle-info mr-1"></i> ตัวกรองนี้จะส่งผลกับการแสดงผลบนหน้าจอ, Dashboard และข้อมูลเมื่อกดส่งออก (Export Report) พร้อมๆ กัน</p>
+        </div>
+
+        <div id="ordersSection" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10"></div>
+
+        <div id="emptyState" class="hidden text-center py-24 glass-card rounded-2xl border border-dashed border-gray-300 dark:border-slate-700">
+            <div class="inline-block p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 mb-4 shadow-inner"><i class="fa-solid fa-ghost text-5xl text-slate-400 dark:text-slate-500 animate-pulse"></i></div>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-white">ไม่พบรายการที่ค้นหา</h3>
+            <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">ลองปรับตัวกรอง หรือสร้างออเดอร์ใหม่เพื่อเริ่มงาน</p>
+            <button onclick="openModal()" class="mt-6 px-6 py-2 bg-slate-800 text-white rounded-full text-sm font-medium hover:bg-gaming-accent transition shadow-lg">สร้างออเดอร์เลย</button>
+        </div>
+    </div>
+
+    <div id="orderModal" class="fixed inset-0 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-visible shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-gray-200 dark:border-slate-700 relative z-50">
+                
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30 rounded-t-2xl flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2" id="modalTitle">
+                        <i class="fa-solid fa-clipboard-list text-gaming-accent"></i> ข้อมูลงานจ้าง
+                    </h3>
+                    <button onclick="closeModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div class="px-6 py-6">
+                    <form id="orderForm" class="space-y-6">
+                        <input type="hidden" id="orderId">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ชื่อเกม <span class="text-rose-500">*</span></label>
+                                <select id="gameSelect" class="w-full" placeholder="ค้นหาหรือเลือกเกม..." autocomplete="off"><option value="">เลือกเกม...</option></select>
+                                <input type="text" id="customGameInput" class="mt-2 w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none hidden transition" placeholder="พิมพ์ชื่อเกมใหม่...">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ลูกค้า / ผู้จ้าง <span class="text-rose-500">*</span></label>
+                                <input type="text" id="customerName" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400 transition" placeholder="ชื่อเล่น หรือ ID ลูกค้า">
+                            </div>
+                        </div>
+
+                        <div class="bg-indigo-50/50 dark:bg-slate-900/50 p-4 rounded-xl border border-indigo-100 dark:border-slate-700/80 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-gaming-accent"></div>
+                            <p class="text-xs text-gaming-accent font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> ข้อมูลบัญชี (Credentials)</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Username / ID</label>
+                                    <div class="relative">
+                                        <input type="text" id="username" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-8 text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none font-mono text-sm" placeholder="username">
+                                        <i class="fa-solid fa-user absolute right-3 top-3 text-slate-400 text-xs"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Password</label>
+                                    <div class="relative">
+                                        <input type="text" id="password" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-8 text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none font-mono text-sm" placeholder="password">
+                                        <i class="fa-solid fa-key absolute right-3 top-3 text-slate-400 text-xs"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex justify-between items-center">
+                                 <span>ช่องทางติดต่อ</span>
+                                 <button type="button" onclick="addContactInput()" class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-gaming-accent px-2 py-1 rounded font-medium transition">+ เพิ่มช่องทาง</button>
+                             </label>
+                             <div id="contactListContainer" class="space-y-2"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">ระดับงาน (Rank Priority)</label>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rank" value="none" checked class="rank-radio hidden" onchange="handleRankChange(this)">
+                                    <div class="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none font-medium">ทั่วไป</div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rank" value="vip" class="rank-radio hidden" onchange="handleRankChange(this)">
+                                    <div class="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none font-bold text-amber-500"><i class="fa-solid fa-star mr-1"></i> VIP</div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rank" value="vvip" class="rank-radio hidden" onchange="handleRankChange(this)">
+                                    <div class="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none font-bold text-purple-500"><i class="fa-solid fa-crown mr-1"></i> VVIP</div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rank" value="special" class="rank-radio hidden" onchange="handleRankChange(this)">
+                                    <div class="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none font-bold text-pink-500"><i class="fa-solid fa-sparkles mr-1"></i> Special</div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rank" value="urgent" class="rank-radio hidden" onchange="handleRankChange(this)">
+                                    <div class="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none font-bold text-rose-500"><i class="fa-solid fa-fire mr-1"></i> Urgent</div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rank" value="super_vvip" class="rank-radio hidden" onchange="handleRankChange(this)">
+                                    <div class="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition select-none font-bold text-indigo-500"><i class="fa-solid fa-gem mr-1"></i> Super VVIP</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fa-regular fa-calendar text-slate-400 mr-1"></i> วันเริ่ม</label>
+                                    <input type="text" id="startDate" required class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fa-regular fa-calendar-check text-slate-400 mr-1"></i> วันสิ้นสุด</label>
+                                    <input type="text" id="endDate" required class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fa-solid fa-sack-dollar text-slate-400 mr-1"></i> ราคา (บาท)</label>
+                                    <input type="number" id="price" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400 text-lg font-bold" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">สถานะงาน</label>
+                                    <div class="relative">
+                                        <select id="status" class="w-full h-11" placeholder="เลือกสถานะ..." autocomplete="off">
+                                            <option value="pending">⏳ รอดำเนินการ</option>
+                                            <option value="active">🎮 กำลังเล่น</option>
+                                            <option value="completed">✅ เสร็จสิ้น</option>
+                                            <option value="canceled">❌ ยกเลิก</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex justify-between items-center">
+                                <span><i class="fa-solid fa-list-check text-slate-400 mr-1"></i> รายการที่ต้องทำ (Tasks)</span>
+                                <button type="button" onclick="addTaskInput()" class="text-xs bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-100 px-2 py-1 rounded font-medium transition">+ เพิ่มรายการ</button>
+                            </label>
+                            <div id="taskListContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-2 rounded-lg"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> หมายเหตุ (Admin Notes)</label>
+                            <textarea id="adminNotes" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400" placeholder="บันทึกย่อสำหรับแอดมินเท่านั้น..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="px-6 py-4 border-t border-gray-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30 rounded-b-2xl flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition shadow-sm">
+                        ยกเลิก
+                    </button>
+                    <button type="button" onclick="saveOrder()" class="w-full sm:w-auto px-8 py-2.5 rounded-lg bg-gradient-to-r from-gaming-accent to-fuchsia-500 hover:from-gaming-accent-hover hover:to-fuchsia-600 text-white font-bold transition shadow-lg shadow-purple-500/30 flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bannerModal" class="fixed inset-0 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeBannerModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl w-full border border-gray-200 dark:border-slate-700 flex flex-col max-h-[90vh] relative z-50">
+                <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-images mr-2 text-gaming-accent"></i>จัดการ Banners</h3>
+                    <button onclick="closeBannerModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden flex-1">
+                    <div class="lg:col-span-3 flex flex-col h-full overflow-hidden border border-gray-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-[#0f172a]/50">
+                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3"><i class="fa-solid fa-list text-slate-400 mr-1"></i> รายการทั้งหมด</h4>
+                        <div id="bannerList" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-2"></div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-5 border border-gray-200 dark:border-slate-700 flex flex-col h-full overflow-hidden shadow-sm">
+                        <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4 shrink-0 border-b border-gray-100 dark:border-slate-700 pb-2" id="bannerFormTitle">✨ เพิ่ม Banner ใหม่</h4>
+                        <form id="bannerForm" class="space-y-4 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                            <input type="hidden" id="bannerId">
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">หัวข้อ (Title)</label>
+                                <input type="text" id="bannerTitle" class="w-full h-10 mt-1 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gaming-accent focus:border-gaming-accent">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">รายละเอียด (Subtitle)</label>
+                                <textarea id="bannerSubtitle" rows="2" class="w-full mt-1 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gaming-accent focus:border-gaming-accent" placeholder="โปรโมชั่น..."></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">URL รูปภาพ</label>
+                                <div class="flex gap-2 mt-1">
+                                    <input type="text" id="bannerImage" class="flex-1 h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gaming-accent" placeholder="https://...">
+                                    <button type="button" onclick="previewBannerImage()" class="h-10 px-4 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition" title="Preview"><i class="fa-solid fa-eye"></i></button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">ข้อความ Tag</label>
+                                    <input type="text" id="bannerTagText" class="h-10 w-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none" placeholder="HOT DEAL">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">สี Tag</label>
+                                    <select id="bannerTagColor" class="w-full" placeholder="เลือกสี..." autocomplete="off">
+                                        <option value="yellow">Yellow (Hot)</option>
+                                        <option value="green">Green (New)</option>
+                                        <option value="red">Red (Promo)</option>
+                                        <option value="blue">Blue (Info)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-200 dark:border-slate-700">
+                                <input type="checkbox" id="bannerActive" checked class="accent-gaming-accent w-4 h-4 cursor-pointer">
+                                <label for="bannerActive" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">เปิดใช้งานแบนเนอร์นี้</label>
+                            </div>
+                        </form>
+                        <div class="flex gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 shrink-0">
+                            <button type="button" onclick="saveBanner()" class="flex-1 bg-gaming-accent hover:bg-gaming-accent-hover text-white py-2.5 rounded-lg text-sm font-bold transition shadow-lg shadow-purple-500/20">บันทึก Banner</button>
+                            <button type="button" onclick="resetBannerForm()" class="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm font-medium transition">ล้าง</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="imagePreviewModal" class="fixed inset-0 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-black/80 transition-opacity backdrop-blur-sm" onclick="closePreviewModal()"></div>
+            <div class="inline-block bg-transparent rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle max-w-4xl w-full relative z-">
+                <div class="relative">
+                    <button onclick="closePreviewModal()" class="absolute -top-12 right-0 text-white hover:text-rose-500 text-3xl transition drop-shadow-md"><i class="fa-solid fa-xmark"></i></button>
+                    <img id="previewImageTarget" src="" class="w-full h-auto rounded-xl shadow-2xl border border-slate-700 object-contain max-h-[80vh]" alt="Preview">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-">
+        <div class="bg-slate-800 border-l-4 border-gaming-success text-white px-5 py-3.5 rounded-lg shadow-2xl flex items-center gap-3 min-w-[200px]">
+            <i class="fa-solid fa-circle-check text-gaming-success text-lg" id="toastIcon"></i>
+            <span id="toastMessage" class="font-medium text-sm">Copied!</span>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 hidden">
+        <div id="confirmOverlay" class="fixed inset-0 confirm-overlay transition-opacity"></div>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white dark:bg-gaming-card rounded-xl p-6 max-w-sm w-full border border-gray-200 dark:border-slate-700 shadow-2xl confirm-box relative z- text-center transform transition-transform scale-100">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-rose-100 dark:bg-rose-900/30 mb-4" id="confirmIconBox">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 text-xl" id="confirmIcon"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2" id="confirmTitle">ยืนยันการทำรายการ</h3>
+                <p id="confirmMessage" class="text-slate-500 dark:text-slate-400 text-sm"></p>
+                <div class="mt-6 flex justify-center gap-3 confirm-actions">
+                    <button id="confirmCancel" class="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium w-full transition">ยกเลิก</button>
+                    <button id="confirmOk" class="px-5 py-2.5 rounded-lg bg-rose-500 text-white hover:bg-rose-600 font-medium w-full transition shadow-lg shadow-rose-500/30">ตกลง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-10 border-t border-gray-200/50 dark:border-slate-700/50 flex flex-col items-center justify-center text-center relative z-10">
+        
+        <div id="socialContainer" class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-4"></div>
+        
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+            &copy; 2024 - <span id="currentYear"></span> <a href="https://facebook.com/kchaiwat24" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Chaiwat Kwanta (KeepPlayIT)</a> . All rights reserved.
+        </p>
+    </footer>
+    <script>
+        const API_URL = ""; 
+
+        const GAME_LIST = [
+            "Genshin Impact", 
+            "Honkai: Star Rail", 
+            "Zenless Zone Zero", 
+            "Wuthering Waves"
+        ];
+        
+        const DEFAULT_BANNERS = [
+            { id: 1, title: 'รับปั้นแรงค์ทุกเกม!', subtitle: 'ราคาเริ่มต้นเพียง 50 บาท ปลอดภัย 100%', image: 'https://placehold.co/800x400/2a1b5e/FFF?text=Rank+Boost', active: true, tagText: 'HOT DEAL', tagColor: 'yellow', bgGradient: 'from-indigo-900 to-purple-800', date: new Date().toISOString() }        
+        ];
+
+        const MOCK_ORDERS = [
+            {
+                id: 'mock-1', gameName: 'Genshin Impact', customerName: 'คุณเอ', username: 'user123', password: 'password123',
+                startDate: new Date().toISOString().slice(0,10), endDate: new Date(new Date().setDate(new Date().getDate()+5)).toISOString().slice(0,10),
+                price: 500, status: 'active', rank: 'vip',
+                contacts: [{type:'line', value:'lineID_123'}, {type:'tel', value:'0812345678'}], 
+                tasks: [{text:'Daily Commission', done:true}], notes: 'ลูกค้าเร่งงานนิดหน่อย'
+            }
+        ];
+
+        const CONTACT_TYPES = [
+            { value: 'facebook', text: 'Facebook', icon: 'fa-brands fa-facebook', color: 'text-blue-600' },
+            { value: 'line', text: 'Line', icon: 'fa-brands fa-line', color: 'text-green-500' },
+            { value: 'discord', text: 'Discord', icon: 'fa-brands fa-discord', color: 'text-indigo-500' },
+            { value: 'tel', text: 'เบอร์โทร', icon: 'fa-solid fa-phone', color: 'text-slate-500' },
+            { value: 'twitter', text: 'Twitter', icon: 'fa-brands fa-twitter', color: 'text-sky-400' },
+            { value: 'link', text: 'Link', icon: 'fa-solid fa-link', color: 'text-blue-500' }
+        ];
+            
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        let orders = []; let banners = [];
+        let isRevenueVisible = false; let currentBanner = 0; let bannerInterval;
+        let gameSelectModal, statusSelectModal, gameFilter, statusFilter, bannerTagSelect, quickTimeSelect;
+        let toastTimeout = null; let dashboardChart = null;
+        let dashboardVisible = true;
+        let currentFilteredMonth = null; // 📌 ตัวแปรเก็บเดือนที่กำลัง Filter อยู่
+
+        // 📌 ตั้งค่าช่องทางติดต่อ (JSON Config) Config Social
+        // isActive: 1 = แสดงผล, 0 = ซ่อน
+        const socialLinks = [
+            { 
+                name: 'Discord', 
+                url: '#', 
+                icon: 'fa-brands fa-discord', 
+                hoverClass: 'hover:bg-[#5865F2] hover:border-[#5865F2]', 
+                isActive: 1 
+            },
+            { 
+                name: 'Youtube', 
+                url: 'https://www.youtube.com/@KeepPlayIT', 
+                icon: 'fa-brands fa-youtube', 
+                hoverClass: 'hover:bg-[#FF0000] hover:border-[#FF0000]', 
+                isActive: 1 
+            },
+            { 
+                name: 'Facebook', 
+                url: 'https://facebook.com/kchaiwat24', 
+                icon: 'fa-brands fa-facebook-f', 
+                hoverClass: 'hover:bg-[#1877F2] hover:border-[#1877F2]', 
+                isActive: 1 
+            },
+            { 
+                name: 'X (Twitter)', 
+                url: 'https://x.com/ckwant20230', 
+                icon: 'fa-brands fa-x-twitter', 
+                hoverClass: 'hover:bg-black hover:border-black dark:hover:bg-white dark:hover:text-black', 
+                isActive: 1 
+            },
+            { 
+                name: 'Line', 
+                url: 'https://line.me/ti/p/ebslS6W2XV', 
+                icon: 'fa-brands fa-line', 
+                hoverClass: 'hover:bg-[#00B900] hover:border-[#00B900]', 
+                isActive: 1 
+            },
+            { 
+                name: 'Instagram', 
+                url: 'https://www.instagram.com/chaiwat.k0912', 
+                icon: 'fa-brands fa-instagram', 
+                hoverClass: 'hover:bg-[#E1306C] hover:border-[#E1306C]', 
+                isActive: 1 
+            },
+            { 
+                name: 'VK', 
+                url: '#', 
+                icon: 'fa-brands fa-vk', 
+                hoverClass: 'hover:bg-[#4C75A3] hover:border-[#4C75A3]', 
+                isActive: 0 
+            }
+        ];
+
+        // 📌 ฟังก์ชันเรนเดอร์ปุ่ม Social ลงในหน้าเว็บ
+        const socialContainer = document.getElementById('socialContainer');
+        socialLinks.filter(item => item.isActive === 1).forEach(social => {
+            const btn = document.createElement('a');
+            btn.href = social.url;
+            btn.target = '_blank';
+            btn.title = social.name;
+            // ใส่ Base Class และ Hover Class ตามที่ตั้งค่าใน JSON
+            btn.className = `w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-white dark:hover:text-white transition-all shadow-sm border border-gray-200 dark:border-slate-700 ${social.hoverClass}`;
+            
+            const icon = document.createElement('i');
+            icon.className = `${social.icon} text-lg`;
+            
+            btn.appendChild(icon);
+            socialContainer.appendChild(btn);
+        });
+
+        $(document).ready(function() {
+            initTheme(); initTomSelects(); populateGameData(); loadData();
+            setupSearch(); setupFlatpickr();
+
+            dashboardVisible = (localStorage.getItem('dashboardVisible') !== 'false');
+            if(!dashboardVisible) $('#dashboardSection').hide();
+            updateDashboardToggleText();
+        });
+        
+        function handleRankChange(radio) {
+            const val = radio.value;
+            const fpStart = document.querySelector('#startDate')._flatpickr;
+            const fpEnd = document.querySelector('#endDate')._flatpickr;
+            if (val === 'super_vvip') {
+                statusSelectModal.disable();
+                if(fpStart) { fpStart.clear(); fpStart._input.disabled = true; }
+                if(fpEnd) { fpEnd.clear(); fpEnd._input.disabled = true; }
+            } else {
+                statusSelectModal.enable();
+                if(fpStart) fpStart._input.disabled = false;
+                if(fpEnd) fpEnd._input.disabled = false;
+            }
+        }
+
+        function loadData() {
+            if (typeof API_URL !== 'undefined' && API_URL) {
+                fetch(API_URL).then(r => r.ok ? r.json() : Promise.reject(r))
+                    .then(data => {
+                        orders = data.orders || []; banners = data.banners || [];
+                        if(orders.length === 0) orders = MOCK_ORDERS; if(banners.length === 0) banners = DEFAULT_BANNERS;
+                        initApp();
+                    }).catch(e => { console.error(e); loadFromLocal(); });
+            } else loadFromLocal();
+        }
+
+        function loadFromLocal() {
+            orders = JSON.parse(localStorage.getItem('gameBoosterOrders')) || MOCK_ORDERS;
+            banners = JSON.parse(localStorage.getItem('gameBoosterBanners')) || DEFAULT_BANNERS;
+            initApp();
+        }
+
+        function initApp() { 
+            renderOrders(); renderBanners(); renderBannerList(); updateStats(); renderDashboard(); 
+        }
+
+        function saveData() {
+            localStorage.setItem('gameBoosterOrders', JSON.stringify(orders));
+            localStorage.setItem('gameBoosterBanners', JSON.stringify(banners));
+            if (typeof API_URL !== 'undefined' && API_URL) {
+                fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ orders, banners }) }).catch(console.error);
+            }
+        }
+
+        function applyQuickTimeFilter() {
+            const val = quickTimeSelect ? quickTimeSelect.getValue() : $('#quickTimeFilter').val();
+            const fpStart = document.querySelector('#filterStartDate')._flatpickr;
+            const fpEnd = document.querySelector('#filterEndDate')._flatpickr;
+            
+            const today = new Date();
+            let start, end;
+            currentFilteredMonth = null; // ล้างสถานะกรองรายเดือน
+
+            if(val === 'this_month') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            } else if (val === 'last_month') {
+                start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                end = new Date(today.getFullYear(), today.getMonth(), 0);
+            } else if (val === 'this_year') {
+                start = new Date(today.getFullYear(), 0, 1);
+                end = new Date(today.getFullYear(), 11, 31);
+            } else if (val === 'all') {
+                fpStart.clear(); fpEnd.clear(); renderOrders(); renderDashboard(); return;
+            } else {
+                return; 
+            }
+
+            fpStart.setDate(start); fpEnd.setDate(end);
+            renderOrders(); renderDashboard();
+        }
+
+        function sortOrders(list, sortBy) {
+            if(sortBy === 'newest') list.sort((a,b) => new Date(b.startDate||0) - new Date(a.startDate||0));
+            if(sortBy === 'oldest') list.sort((a,b) => new Date(a.startDate||0) - new Date(b.startDate||0));
+            if(sortBy === 'price_desc') list.sort((a,b) => (b.price||0) - (a.price||0));
+            if(sortBy === 'price_asc') list.sort((a,b) => (a.price||0) - (b.price||0));
+            if(sortBy === 'urgency') {
+                const w = { super_vvip: 5, urgent: 4, vvip: 3, vip: 2, special: 1, none: 0 };
+                list.sort((a,b) => (w[b.rank||'none'] - w[a.rank||'none']));
+            }
+            return list;
+        }
+
+        function getFilteredOrders() {
+            const search = $('#searchInput').val().toLowerCase();
+            const statusCheck = statusFilter ? (statusFilter.getValue() || 'all') : 'all';
+            const gameCheck = gameFilter ? gameFilter.getValue() : [];
+            const isAllGames = gameCheck.length === 0;
+            const startDate = $('#filterStartDate').val();
+            const endDate = $('#filterEndDate').val();
+
+            let result = orders.filter(order => {
+                const matchesSearch = (order.gameName+order.customerName+(order.username||'')).toLowerCase().includes(search);
+                const matchesStatus = statusCheck === 'all' || order.status === statusCheck;
+                const matchesGame = isAllGames || gameCheck.includes(order.gameName);
+                
+                let matchesDate = true;
+                if(startDate && endDate) matchesDate = (new Date(order.startDate) <= new Date(endDate)) && (new Date(order.endDate) >= new Date(startDate));
+                else if (startDate) matchesDate = new Date(order.startDate) >= new Date(startDate);
+                
+                return matchesSearch && matchesStatus && matchesGame && matchesDate;
+            });
+            
+            const sortVal = document.getElementById('sortOrder') ? document.getElementById('sortOrder').value : 'newest';
+            return sortOrders(result, sortVal);
+        }
+
+        function updateStats(filteredList = null) {
+            const currentOrders = filteredList || getFilteredOrders();
+            $('#stat-total').text(orders.length);
+            
+            const pending = orders.filter(o => o.status === 'pending').length;
+            const active = orders.filter(o => o.status === 'active').length;
+            const completed = orders.filter(o => o.status === 'completed').length;
+            const canceled = orders.filter(o => o.status === 'canceled').length;
+
+            $('#stat-pending').text(pending); $('#stat-active').text(active);
+            $('#stat-completed').text(completed); $('#stat-canceled').text(canceled);
+
+            const totalRevenue = currentOrders.filter(o => o.status !== 'canceled' && o.rank !== 'super_vvip').reduce((sum, o) => sum + (parseFloat(o.price) || 0), 0);
+            $('#stat-revenue').text(isRevenueVisible ? '฿' + totalRevenue.toLocaleString() : '฿*****');
+        }
+        function toggleRevenue() { isRevenueVisible = !isRevenueVisible; updateStats(); }
+
+        function copyReceipt(id) {
+            const o = orders.find(x => x.id === id); if(!o) return;
+            const completed = o.tasks ? o.tasks.filter(t => t.done).length : 0; const total = o.tasks ? o.tasks.length : 0; const progress = total === 0 ? "0" : Math.round((completed/total)*100);
+            
+            let statusTh = 'รอดำเนินการ'; if(o.status==='active') statusTh='กำลังดำเนินการ'; if(o.status==='completed') statusTh='เสร็จสิ้น'; if(o.status==='canceled') statusTh='ยกเลิกแล้ว';
+            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
+            copyToClipboard(msg);
+        }
+
+        function quickStatusUpdate(id, newStatus) {
+            const idx = orders.findIndex(o => o.id === id);
+            if(idx !== -1) { 
+                orders[idx].status = newStatus; 
+                saveData(); renderOrders(); renderDashboard(); 
+                showToast(`อัปเดตสถานะเป็น ${newStatus} แล้ว`, 'success'); 
+            }
+        }
+
+        function duplicateOrder(editId) {
+            const order = orders.find(o => o.id === editId); if(!order) return;
+            
+            $('#orderModal').removeClass('hidden'); 
+            $('#taskListContainer').empty(); $('#contactListContainer').empty(); 
+            document.getElementById('orderForm').reset();
+            
+            $('#modalTitle').html('<i class="fa-solid fa-copy text-gaming-accent"></i> คัดลอกข้อมูลงานจ้าง (สร้างใหม่)'); 
+            $('#orderId').val(''); 
+            
+            if(gameSelectModal) { if(GAME_LIST.includes(order.gameName)) { gameSelectModal.setValue(order.gameName); } else { gameSelectModal.setValue('new_game'); $('#customGameInput').val(order.gameName).removeClass('hidden'); } }
+            
+            $('#customerName').val(order.customerName + ' (Copy)'); 
+            $('#username').val(order.username); $('#password').val(order.password); $('#price').val(order.price); $('#adminNotes').val(order.notes || '');
+            
+            const fpStart = document.querySelector('#startDate')._flatpickr; const fpEnd = document.querySelector('#endDate')._flatpickr;
+            const rankVal = order.rank || 'none'; $(`input[name="rank"][value="${rankVal}"]`).prop('checked', true);
+
+            if(rankVal === 'super_vvip') { 
+                statusSelectModal.disable(); 
+                if(fpStart) { fpStart.clear(); fpStart._input.disabled = true; } 
+                if(fpEnd) { fpEnd.clear(); fpEnd._input.disabled = true; } 
+            } else { 
+                statusSelectModal.enable(); statusSelectModal.setValue('pending'); 
+                if(fpStart) { fpStart.setDate(new Date()); fpStart._input.disabled = false; } 
+                if(fpEnd) { fpEnd.setDate(new Date()); fpEnd._input.disabled = false; } 
+            }
+            
+            if(order.contacts && order.contacts.length > 0) order.contacts.forEach(c => addContactInput(c.type, c.value)); else addContactInput();
+            if(order.tasks && order.tasks.length > 0) order.tasks.forEach(t => addTaskInput(t.text, false)); else addTaskInput();
+        }
+
+        function quickAddTask(orderId) {
+            const input = $(`#newTask-${orderId}`);
+            const text = input.val().trim();
+            if(!text) return;
+
+            const order = orders.find(o => o.id === orderId);
+            if(order) {
+                if(!order.tasks) order.tasks = [];
+                order.tasks.push({text: text, done: false});
+                saveData();
+                renderSingleOrderTasks(orderId);
+                input.val(''); 
+                showToast('เพิ่มงานสำเร็จ', 'success');
+            }
+        }
+
+        function renderSingleOrderTasks(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if(!order) return;
+            
+            const listContainer = $(`#tasks-${orderId}`);
+            listContainer.empty();
+            
+            if(order.tasks && order.tasks.length > 0) {
+                order.tasks.forEach((task, idx) => {
+                    listContainer.append(`<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`);
+                });
+            }
+            
+            const completed = order.tasks ? order.tasks.filter(t => t.done).length : 0;
+            const totalTasks = order.tasks ? order.tasks.length : 0;
+            const progress = totalTasks === 0 ? 0 : Math.round((completed / totalTasks) * 100);
+            $(`#progress-${orderId}`).css('width', `${progress}%`);
+        }
+
+        function renderOrders() {
+            const container = $('#ordersSection'); container.empty();
+            const filteredOrders = getFilteredOrders();
+            updateStats(filteredOrders);
+
+            if (filteredOrders.length === 0) { $('#emptyState').removeClass('hidden'); return; } else { $('#emptyState').addClass('hidden'); }
+
+            filteredOrders.forEach(order => {
+                const totalTasks = order.tasks ? order.tasks.length : 0;
+                const completed = order.tasks ? order.tasks.filter(t => t.done).length : 0;
+                const progress = totalTasks === 0 ? 0 : Math.round((completed / totalTasks) * 100);
+                const rank = order.rank || 'none';
+                
+                let dateBadge;
+                if (rank === 'super_vvip') {
+                    dateBadge = `<span class="super-vvip-bg px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-sm"><i class="fa-solid fa-infinity"></i> Lifetime</span>`;
+                } else {
+                    const diffDays = Math.ceil((new Date(order.endDate).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (86400000));
+                    dateBadge = diffDays < 0 ? '<span class="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 rounded font-medium border border-red-200 dark:border-red-800">เลยกำหนด</span>' : (diffDays === 0 ? '<span class="text-xs bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 px-2 rounded font-medium border border-amber-200 dark:border-amber-800">วันสุดท้าย</span>' : `<span class="text-xs bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2 rounded font-medium border border-blue-200 dark:border-blue-800">เหลือ ${diffDays} วัน</span>`);
+                    if(order.status === 'canceled') dateBadge = '<span class="text-xs bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 px-2 rounded font-medium border border-gray-200 dark:border-gray-700">ยกเลิกแล้ว</span>';
+                }
+
+                let statusClass = 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'; 
+                let statusText = 'รอดำเนินการ';
+                
+                if(order.status === 'pending') { statusClass = 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 status-badge'; statusText = '⏳ รอดำเนินการ'; }
+                else if(order.status === 'active') { statusClass = 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-700/50 status-badge'; statusText = '🎮 กำลังเล่น'; }
+                else if(order.status === 'completed') { statusClass = 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700/50 status-badge'; statusText = '✅ เสร็จสิ้น'; }
+                else if(order.status === 'canceled') { statusClass = 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/40 dark:text-rose-400 dark:border-rose-700/50 status-badge'; statusText = '❌ ยกเลิก'; }
+
+                let rankBadge = '';
+                if (rank !== 'none') {
+                    if (rank === 'vip') { rankBadge = '<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm vip-bg rank-animated-bg status-badge"><i class="fa-solid fa-star mr-1 text-[10px]"></i> VIP</span>'; }
+                    else if (rank === 'vvip') { rankBadge = '<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm vvip-bg rank-animated-bg status-badge"><i class="fa-solid fa-crown mr-1 text-[10px]"></i> VVIP</span>'; }
+                    else if (rank === 'special') { rankBadge = '<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm special-bg rank-animated-bg status-badge"><i class="fa-solid fa-sparkles mr-1 text-[10px]"></i> Special</span>'; }
+                    else if (rank === 'urgent') { rankBadge = '<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm urgent-bg rank-animated-bg status-badge"><i class="fa-solid fa-fire mr-1 text-[10px]"></i> Urgent</span>'; }
+                    else if (rank === 'super_vvip') { rankBadge = '<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm super-vvip-bg rank-animated-bg status-badge"><i class="fa-solid fa-gem mr-1 text-[10px]"></i> Super VVIP</span>'; }
+                }
+
+                let contactsHtml = '';
+                if (order.contacts && order.contacts.length > 0) {
+                    contactsHtml = '<div class="flex flex-wrap gap-2 mt-2.5">';
+                    order.contacts.forEach(c => {
+                        const info = CONTACT_TYPES.find(t => t.value === c.type) || { icon: 'fa-link', color: 'text-slate-500' };
+                        let displayVal = c.value; let href = c.value.startsWith('http') ? c.value : '#'; let target = '_blank';
+                        if(c.type === 'tel') { href = `tel:${c.value}`; target = ''; if(c.value.length >= 10) displayVal = c.value.substring(0,3) + '-XXX-' + c.value.substring(c.value.length-4); } else if (c.type === 'line' || c.type === 'discord') { href = '#'; target = ''; if(c.value.length > 4) displayVal = c.value.substring(0,2) + '***' + c.value.substring(c.value.length-2); } else if (c.type === 'facebook' || c.type === 'twitter') { displayVal = 'Link'; }
+                        contactsHtml += `<div class="flex items-center gap-1 text-xs bg-white dark:bg-[#0f172a] rounded-md border border-gray-200 dark:border-slate-700 pr-1 group/badge transition hover:border-gaming-accent shadow-sm"><a href="${href}" target="${target}" class="flex items-center gap-1.5 pl-2 py-1 ${href==='#'?'cursor-default':''}"><i class="${info.icon} ${info.color}"></i><span class="max-w-[80px] truncate text-slate-600 dark:text-slate-400 group-hover/badge:text-gaming-accent font-medium">${displayVal}</span></a><button onclick="copyToClipboard('${c.value}')" class="text-slate-400 hover:text-emerald-500 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800" title="Copy"><i class="fa-regular fa-copy"></i></button></div>`;
+                    });
+                    contactsHtml += '</div>';
+                }
+
+                let dateDisplay = rank !== 'super_vvip' ? `<span class="font-medium"><i class="fa-regular fa-calendar mr-1"></i> ${formatDate(order.startDate)} - ${formatDate(order.endDate)}</span>` : `<span class="text-gaming-accent font-bold text-xs"><i class="fa-solid fa-infinity"></i> ไม่จำกัดเวลา</span>`;
+
+                const card = `
+                    <div id="card-${order.id}" class="order-card bg-white dark:bg-gaming-card rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative flex flex-col h-full opacity-${order.status === 'canceled' ? '60' : '100'}">
+                        
+                        <div class="p-5 border-b border-gray-100 dark:border-slate-700/50 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/40 dark:to-transparent relative">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex flex-wrap gap-1.5 items-center">
+                                    <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${statusClass}">${statusText}</span>
+                                    ${rankBadge}
+                                </div>
+                                <div class="flex gap-1 shrink-0 ml-2">
+                                    <button onclick="quickStatusUpdate('${order.id}', '${order.status==='active'?'completed':'active'}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-${order.status==='active'?'emerald':'amber'}-500 transition" title="Quick Update"><i class="fa-solid fa-${order.status==='active'?'check':'gamepad'}"></i></button>
+                                    <button onclick="duplicateOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-gaming-accent transition" title="คัดลอกงานจ้าง"><i class="fa-solid fa-copy"></i></button>
+                                    <button onclick="editOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-500 transition" title="แก้ไขข้อมูล"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="deleteOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 dark:text-white truncate pr-2 ${order.status === 'canceled' ? 'line-through text-slate-400' : ''}">${order.gameName}</h3>
+                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName || '-'}</span></div>${contactsHtml}</div>
+                        </div>
+
+                        <div class="px-5 py-4 space-y-2.5 bg-slate-50 dark:bg-[#0b1220]/50 border-b border-gray-100 dark:border-slate-700/50">
+                            <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
+                                <div class="flex items-center gap-3 overflow-hidden flex-1">
+                                    <i class="fa-solid fa-user text-slate-400 text-xs"></i>
+                                    <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text font-medium" data-value="${order.username}" data-revealed="false">${smartMask(order.username, false)}</span>
+                                </div>
+                                <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${order.username}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
+                            </div>
+                            <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
+                                <div class="flex items-center gap-3 overflow-hidden flex-1">
+                                    <i class="fa-solid fa-key text-slate-400 text-xs"></i>
+                                    <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text masked-dot" data-type="password" data-value="${order.password}" data-revealed="false">${smartMask(order.password, true)}</span>
+                                </div>
+                                <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${order.password}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 flex-1 flex flex-col gap-4">
+                            <div class="flex justify-between text-[13px] text-slate-500">${dateDisplay}${dateBadge}</div>
+                            <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner"><div class="progress-bar bg-gradient-to-r from-gaming-accent to-fuchsia-500 h-2 rounded-full relative" style="width: ${progress}%" id="progress-${order.id}"></div></div>
+                            <ul class="space-y-2.5 mt-1" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`).join('') : ''}</ul>
+                            
+                            <div class="mt-1 flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:border-gaming-accent transition-colors">
+                                <input type="text" id="newTask-${order.id}" class="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-200 px-2 py-1 focus:outline-none" placeholder="+ เพิ่มงานด่วน..." onkeypress="if(event.key==='Enter') quickAddTask('${order.id}')">
+                                <button onclick="quickAddTask('${order.id}')" class="w-6 h-6 flex justify-center items-center rounded bg-gaming-accent hover:bg-gaming-accent-hover text-white transition shadow-sm"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                            </div>
+
+                            ${order.notes ? `<div class="mt-auto pt-3 border-t border-dashed border-gray-200 dark:border-slate-700"><p class="text-[11px] text-amber-600 dark:text-amber-400/80 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-800/30"><i class="fa-solid fa-note-sticky mr-1"></i> ${order.notes}</p></div>` : '<div class="mt-auto"></div>'}
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-[#0b1220]/80 p-3 border-t border-gray-100 dark:border-slate-700/50 text-center">
+                            <button onclick="copyReceipt('${order.id}')" class="w-full text-xs font-bold text-gaming-accent hover:text-white bg-indigo-50 hover:bg-gaming-accent dark:bg-indigo-900/20 dark:hover:bg-gaming-accent transition py-2 rounded-md border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
+                                <i class="fa-solid fa-receipt mr-1"></i> คัดลอกสรุปส่งลูกค้า
+                            </button>
+                        </div>
+                    </div>`;
+                container.append(card);
+            });
+        }
+
+        function startBannerLoop() { 
+            clearInterval(bannerInterval); 
+            bannerInterval = setInterval(() => { changeBanner(1); }, 5000); 
+        }
+        function manualChangeBanner(dir) { clearInterval(bannerInterval); changeBanner(dir); startBannerLoop(); }
+        
+        function renderBanners() {
+            const container = $('#bannerContainer'); 
+            container.find('.banner-slide').remove();
+            const activeBanners = banners.filter(b => b.active);
+            if(activeBanners.length === 0) { container.addClass('hidden'); return; } else { container.removeClass('hidden'); }
+            
+            activeBanners.forEach((b, index) => {
+                let visual = b.image ? `<div class="absolute right-0 top-0 h-full w-2/3 bg-cover bg-center opacity-40 z-10" style="background-image: url('${b.image}'); -webkit-mask-image: linear-gradient(to left, #000, transparent); mask-image: linear-gradient(to left, #000, transparent);"></div>` : `<i class="fa-solid ${b.icon} absolute right-10 bottom-0 text-9xl text-white/10 z-10 rotate-12 transform scale-150 origin-bottom-right"></i>`;
+                let tagClass = 'bg-slate-500'; 
+                if(b.tagColor === 'yellow') tagClass = 'bg-amber-400 text-amber-900';
+                if(b.tagColor === 'green') tagClass = 'bg-emerald-500 text-white'; 
+                if(b.tagColor === 'red') tagClass = 'bg-rose-500 text-white';
+                if(b.tagColor === 'blue') tagClass = 'bg-sky-500 text-white';
+                
+                const html = `<div class="banner-slide ${index === 0 ? 'active' : ''} bg-gradient-to-r ${b.bgGradient || 'from-slate-800 to-slate-900'} flex items-center px-8 sm:px-16"><div class="text-white z-20 w-full md:w-2/3 drop-shadow-lg">${b.tagText ? `<span class="${tagClass} text-[10px] sm:text-xs font-bold px-2 py-1 rounded mb-3 inline-block shadow-sm tracking-wider uppercase">${b.tagText}</span>` : ''}<h2 class="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">${b.title}</h2><p class="text-slate-200 text-sm sm:text-base opacity-90">${b.subtitle}</p></div>${visual}</div>`;
+                container.append(html);
+            });
+            currentBanner = 0;
+            startBannerLoop();
+        }
+        function changeBanner(dir) {
+            const activeBanners = banners.filter(b => b.active); if(activeBanners.length <= 1) return;
+            $('.banner-slide').eq(currentBanner).removeClass('active');
+            currentBanner = (currentBanner + dir + activeBanners.length) % activeBanners.length;
+            $('.banner-slide').eq(currentBanner).addClass('active');
+        }
+
+        function openBannerManager() { 
+            $('#bannerModal').removeClass('hidden'); renderBannerList(); resetBannerForm(); 
+            if(!bannerTagSelect) { bannerTagSelect = new TomSelect("#bannerTagColor", { create: false, dropdownParent: 'body', render: { option: (d,e)=>`<div><span class="inline-block w-3 h-3 rounded-full mr-2 bg-${d.value}-500"></span>${e(d.text)}</div>`, item: (d,e)=>`<div><span class="inline-block w-3 h-3 rounded-full mr-2 bg-${d.value}-500"></span>${e(d.text)}</div>` } }); }
+        }
+        function closeBannerModal() { $('#bannerModal').addClass('hidden'); }
+        function resetBannerForm() { document.getElementById('bannerForm').reset(); $('#bannerId').val(''); $('#bannerFormTitle').html('✨ เพิ่ม Banner ใหม่'); $('#bannerActive').prop('checked', true); if(bannerTagSelect) bannerTagSelect.clear(); }
+        function renderBannerList() {
+            const list = $('#bannerList'); list.empty();
+            [...banners].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(b => {
+                let tagClass = 'bg-gray-100 text-slate-500 border border-gray-200';
+                if(b.tagColor === 'yellow') tagClass = 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800';
+                if(b.tagColor === 'green') tagClass = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800';
+                if(b.tagColor === 'red') tagClass = 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800';
+                if(b.tagColor === 'blue') tagClass = 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-800';
+                list.append(`<div class="bg-white dark:bg-[#0b1220]/50 border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-4 hover:border-gaming-accent transition"><div class="w-20 h-16 rounded-lg bg-gradient-to-br ${b.bgGradient || 'from-gray-700'} flex-shrink-0 relative overflow-hidden shadow-sm">${b.image ? `<img src="${b.image}" class="w-full h-full object-cover opacity-80">` : ''}</div><div class="flex-1 min-w-0"><h5 class="text-sm font-bold dark:text-white truncate">${b.title}</h5><div class="flex flex-wrap gap-2 mt-1.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${b.active?'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400':'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}">${b.active?'Active':'Disabled'}</span>${b.tagText?`<span class="text-[10px] px-2 py-0.5 rounded border font-medium ${tagClass}">${b.tagText}</span>`:''}</div></div><div class="flex flex-col gap-1.5"><button onclick="editBanner(${b.id})" class="p-1.5 bg-slate-50 dark:bg-slate-800 rounded text-slate-400 hover:text-blue-500 transition"><i class="fa-solid fa-pen"></i></button><button onclick="deleteBanner(${b.id})" class="p-1.5 bg-slate-50 dark:bg-slate-800 rounded text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-trash"></i></button></div></div>`);
+            });
+        }
+        function saveBanner() {
+            const id = $('#bannerId').val(); const title = $('#bannerTitle').val(); if(!title) return alert('ระบุหัวข้อ');
+            const newBanner = { id: id ? parseInt(id) : Date.now(), title, subtitle: $('#bannerSubtitle').val(), image: $('#bannerImage').val(), tagText: $('#bannerTagText').val(), tagColor: bannerTagSelect ? bannerTagSelect.getValue() : 'gray', active: $('#bannerActive').is(':checked'), bgGradient: 'from-indigo-900 to-purple-800', date: new Date().toISOString() };
+            if(id) banners[banners.findIndex(b => b.id == id)] = newBanner; else banners.push(newBanner);
+            saveData(); resetBannerForm(); renderBannerList(); renderBanners(); showToast('บันทึก Banner เรียบร้อย', 'success');
+        }
+        function editBanner(id) { const b = banners.find(x => x.id == id); if(!b) return; $('#bannerId').val(b.id); $('#bannerTitle').val(b.title); $('#bannerSubtitle').val(b.subtitle); $('#bannerImage').val(b.image); $('#bannerTagText').val(b.tagText); $('#bannerActive').prop('checked', b.active); if(bannerTagSelect) bannerTagSelect.setValue(b.tagColor); $('#bannerFormTitle').html('📝 แก้ไข Banner'); }
+        function previewBannerImage() { const url = $('#bannerImage').val(); if(url) { $('#previewImageTarget').attr('src', url); $('#imagePreviewModal').removeClass('hidden'); } }
+        function closePreviewModal() { $('#imagePreviewModal').addClass('hidden'); }
+
+        function openModal() {
+            $('#orderModal').removeClass('hidden'); $('#taskListContainer').empty(); $('#contactListContainer').empty(); 
+            document.getElementById('orderForm').reset(); $('#orderId').val('');
+            if(gameSelectModal) { gameSelectModal.clear(); } if(statusSelectModal) statusSelectModal.clear(); $('#customGameInput').addClass('hidden');
+            $('input[name="rank"][value="none"]').prop('checked', true); statusSelectModal.enable();
+            
+            const fpStart = document.querySelector('#startDate')._flatpickr; const fpEnd = document.querySelector('#endDate')._flatpickr;
+            if(fpStart) { fpStart._input.disabled = false; fpStart.setDate(new Date()); }
+            if(fpEnd) { fpEnd._input.disabled = false; fpEnd.setDate(new Date()); }
+
+            $('#modalTitle').html('<i class="fa-solid fa-clipboard-list text-gaming-accent"></i> เพิ่มข้อมูลงานจ้าง'); 
+            addTaskInput(); addContactInput();
+        }
+
+        function editOrder(editId) {
+            const order = orders.find(o => o.id === editId); if(!order) return;
+            $('#orderModal').removeClass('hidden'); $('#taskListContainer').empty(); $('#contactListContainer').empty(); 
+            document.getElementById('orderForm').reset();
+            $('#modalTitle').html('<i class="fa-solid fa-pen-to-square text-gaming-accent"></i> แก้ไขข้อมูลงาน'); $('#orderId').val(order.id);
+            
+            if(gameSelectModal) { if(GAME_LIST.includes(order.gameName)) { gameSelectModal.setValue(order.gameName); } else { gameSelectModal.setValue('new_game'); $('#customGameInput').val(order.gameName).removeClass('hidden'); } }
+            $('#customerName').val(order.customerName); $('#username').val(order.username); $('#password').val(order.password); $('#price').val(order.price); $('#adminNotes').val(order.notes || '');
+            
+            const fpStart = document.querySelector('#startDate')._flatpickr; const fpEnd = document.querySelector('#endDate')._flatpickr;
+            const rankVal = order.rank || 'none'; $(`input[name="rank"][value="${rankVal}"]`).prop('checked', true);
+
+            if(rankVal === 'super_vvip') { statusSelectModal.disable(); if(fpStart) { fpStart.clear(); fpStart._input.disabled = true; } if(fpEnd) { fpEnd.clear(); fpEnd._input.disabled = true; } } else { statusSelectModal.enable(); statusSelectModal.setValue(order.status); if(fpStart) { fpStart.setDate(order.startDate); fpStart._input.disabled = false; } if(fpEnd) { fpEnd.setDate(order.endDate); fpEnd._input.disabled = false; } }
+            
+            if(order.contacts && order.contacts.length > 0) order.contacts.forEach(c => addContactInput(c.type, c.value)); else addContactInput();
+            if(order.tasks && order.tasks.length > 0) order.tasks.forEach(t => addTaskInput(t.text, !!t.done)); else addTaskInput();
+        }
+
+        function closeModal() { $('#orderModal').addClass('hidden'); }
+        
+        function addContactInput(type = 'facebook', value = '') {
+            const id = Date.now() + Math.floor(Math.random() * 10000);
+            const html = `<div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}"><div class="w-1/3"><select id="contactSelect-${id}" name="contactType[]" class="w-full">${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}</select></div><input type="text" value="${value}" name="contactValue[]" class="flex-1 h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร..."><button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div>`;
+            $('#contactListContainer').append(html); new TomSelect(`#contactSelect-${id}`, window.contactSelectConfig);
+        }
+        
+        function addTaskInput(value = '', done = false) {
+            const id = Date.now() + Math.floor(Math.random() * 10000);
+            $('#taskListContainer').append(`<div class="flex gap-2 items-center mb-2" id="task-${id}" data-done="${done}"><input type="text" value="${value}" name="tasks[]" class="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-600 rounded-md px-3 text-sm dark:text-white focus:outline-none focus:border-gaming-accent focus:ring-1 focus:ring-gaming-accent" placeholder="รายละเอียดสิ่งที่ต้องทำ..."><button type="button" onclick="$('#task-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div>`);
+        }
+
+        function toggleVisibility(btn) {
+            const row = $(btn).closest('.border'); const span = row.find('[data-value]').first(); if(!span || span.length === 0) return;
+            const full = span.attr('data-value') || ''; const isRevealed = span.attr('data-revealed') === 'true'; const isPassword = span.attr('data-type') === 'password';
+            if(isRevealed) { span.text(smartMask(full, isPassword)); span.attr('data-revealed', 'false'); $(btn).find('i').removeClass('fa-eye-slash text-gaming-accent').addClass('fa-eye text-slate-400'); } else { span.text(full); span.attr('data-revealed', 'true'); $(btn).find('i').removeClass('fa-eye text-slate-400').addClass('fa-eye-slash text-gaming-accent'); }
+        }
+
+        function showConfirm(message, icon = 'fa-triangle-exclamation', color = 'rose') {
+            return new Promise((resolve) => {
+                $('#confirmIcon').attr('class', `fa-solid ${icon} text-${color}-500 text-xl`);
+                $('#confirmIconBox').attr('class', `mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-${color}-100 dark:bg-${color}-900/30 mb-4`);
+                $('#confirmOk').attr('class', `px-5 py-2.5 rounded-lg bg-${color}-500 text-white hover:bg-${color}-600 font-medium w-full transition shadow-lg shadow-${color}-500/30`);
+                $('.confirm-box').css('border-top', `4px solid var(--tw-color-${color}-500)`);
+
+                $('#confirmMessage').text(message); $('#confirmModal').removeClass('hidden'); $('body').addClass('confirm-open');
+                const off = () => { $('#confirmModal').addClass('hidden'); $('#confirmOk, #confirmCancel, #confirmOverlay').off('click'); $('body').removeClass('confirm-open'); };
+                $('#confirmOk').one('click', () => { off(); resolve(true); }); $('#confirmCancel, #confirmOverlay').one('click', () => { off(); resolve(false); });
+            });
+        }
+
+        function deleteOrder(id) { showConfirm('คุณแน่ใจหรือไม่ว่าต้องการลบงานจ้างนี้?').then(ok=>{ if(!ok) return; orders = orders.filter(o => o.id !== id); saveData(); renderOrders(); renderDashboard(); showToast('ลบออเดอร์เรียบร้อย', 'success'); }); }
+        function deleteBanner(id) { showConfirm('ต้องการลบ Banner นี้ใช่หรือไม่?').then(ok=>{ if(!ok) return; banners = banners.filter(b => b.id !== id); saveData(); renderBannerList(); renderBanners(); showToast('ลบ Banner เรียบร้อย', 'success'); }); }
+
+        function importData(input) { 
+            const f = input.files[0]; if(!f) return; const r = new FileReader();
+            r.onload = (e) => { 
+                try { 
+                    const j = JSON.parse(e.target.result);
+                    showConfirm('ยืนยันการ Import ข้อมูล?', 'fa-file-import', 'amber').then(ok => {
+                        if(!ok) { $(input).val(''); return; }
+                        if(j.orders) { orders = j.orders; banners = j.banners || banners; } else orders = j;
+                        saveData(); initApp(); showToast('Import ข้อมูลสำเร็จ', 'success');
+                    });
+                } catch(err){ showToast('ไฟล์ JSON ไม่ถูกต้อง', 'error'); }
+                $(input).val('');
+            }; 
+            r.readAsText(f); 
+        }
+
+        function showToast(msg, type = 'success') { 
+            clearTimeout(toastTimeout); $('#toastMessage').text(msg);
+            
+            if(type === 'error') {
+                $('#toast').find('.border-gaming-success').removeClass('border-gaming-success').addClass('border-rose-500');
+                $('#toastIcon').attr('class', 'fa-solid fa-circle-xmark text-rose-500 text-lg');
+            } else {
+                $('#toast').find('.border-rose-500').removeClass('border-rose-500').addClass('border-gaming-success');
+                $('#toastIcon').attr('class', 'fa-solid fa-circle-check text-gaming-success text-lg');
+            }
+
+            $('#toast').removeClass('translate-y-24 opacity-0').addClass('translate-y-0 opacity-100');
+            toastTimeout = setTimeout(()=>{ $('#toast').removeClass('translate-y-0 opacity-100').addClass('translate-y-24 opacity-0'); }, 3000);
+        }
+
+        function toggleAllMonths(source) {
+            $('.month-cb').prop('checked', source.checked);
+        }
+
+        function renderDashboard() {
+            let filtered = getFilteredOrders(); 
+            
+            const totalRevenue = filtered.filter(o => o.status !== 'canceled' && o.rank !== 'super_vvip').reduce((s,o)=> s + (parseFloat(o.price)||0), 0);
+            const totalOrders = filtered.length;
+            const totalDays = filtered.reduce((s,o)=>{
+                if(o.rank === 'super_vvip') return s;
+                const sD = new Date(o.startDate); const eD = new Date(o.endDate || o.startDate);
+                const days = Math.max(0, Math.floor((eD.setHours(0,0,0,0) - new Date(sD).setHours(0,0,0,0))/86400000) + 1);
+                return s + days;
+            }, 0);
+
+            $('#dash-totalRevenue').text('฿' + totalRevenue.toLocaleString());
+            $('#dash-totalOrders').text(totalOrders);
+            $('#dash-totalDays').text(totalDays);
+
+            const months = {};
+            filtered.forEach(o => {
+                if(!o.startDate || o.rank === 'super_vvip') return;
+                const d = new Date(o.startDate); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                if(!months[key]) months[key] = { rev:0, cnt:0 };
+                months[key].rev += parseFloat(o.price)||0; months[key].cnt += 1;
+            });
+            
+            const tbody = $('#dash-monthly'); tbody.empty();
+            $('#checkAllMonths').prop('checked', false);
+
+            Object.keys(months).sort().reverse().forEach(k=>{
+                const d = new Date(k + '-01'); const label = d.toLocaleString('th-TH', { year: 'numeric', month: 'short' });
+                
+                // เช็คว่าเดือนนี้ถูกกรองอยู่หรือไม่
+                const isFiltered = currentFilteredMonth === k;
+                const trClass = isFiltered ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : '';
+                const textClass = isFiltered ? 'text-gaming-accent font-bold' : '';
+
+                tbody.append(`
+                <tr class="border-t border-gray-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition group ${trClass}">
+                    <td class="py-2.5 pl-2"><input type="checkbox" class="month-cb accent-gaming-accent cursor-pointer rounded" value="${k}"></td>
+                    <td class="py-2.5 font-medium cursor-pointer ${textClass}" onclick="filterByMonth('${k}')" title="คลิกเพื่อกรอง/ยกเลิกการกรองเดือนนี้">${label} ${isFiltered ? '<i class="fa-solid fa-filter ml-1 text-xs"></i>' : ''}</td>
+                    <td class="py-2.5 text-right text-emerald-500 font-bold">฿${months[k].rev.toLocaleString()}</td>
+                    <td class="py-2.5 text-right font-medium">${months[k].cnt}</td>
+                    <td class="py-2.5 text-right">
+                        <button onclick="exportMonth('${k}')" class="text-slate-400 hover:text-emerald-500 transition px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded opacity-0 group-hover:opacity-100 shadow-sm" title="ดาวน์โหลดเฉพาะเดือนนี้">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                    </td>
+                </tr>`);
+            });
+            buildChart(filtered);
+        }
+
+        // 📌 คลิกรายเดือน (Toggle Filter)
+        function filterByMonth(yearMonth) {
+            const fpStart = document.querySelector('#filterStartDate')._flatpickr;
+            const fpEnd = document.querySelector('#filterEndDate')._flatpickr;
+
+            if (currentFilteredMonth === yearMonth) {
+                // ถ้าคลิกเดือนเดิมที่กำลังฟิลเตอร์อยู่ ให้เคลียร์ค่าออก
+                fpStart.clear();
+                fpEnd.clear();
+                currentFilteredMonth = null;
+                if(quickTimeSelect) quickTimeSelect.setValue('');
+                renderOrders();
+                renderDashboard();
+                showToast(`ยกเลิกตัวกรองเดือนแล้ว`, 'success');
+                return;
+            }
+
+            // ถ้าคลิกเดือนใหม่ ให้เซ็ตค่าเป็นเดือนนั้น
+            const [year, month] = yearMonth.split('-');
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 0); 
+
+            fpStart.setDate(start);
+            fpEnd.setDate(end);
+            currentFilteredMonth = yearMonth; // อัปเดตตัวแปรสถานะ
+
+            if(quickTimeSelect) quickTimeSelect.setValue(''); 
+            renderOrders();
+            renderDashboard();
+            
+            const ordersSection = document.getElementById('ordersSection');
+            if (ordersSection) {
+                ordersSection.scrollIntoView({behavior: 'smooth'});
+            }
+            showToast(`แสดงข้อมูลของ ${yearMonth} แล้ว`, 'success');
+        }
+
+        function buildChart(list) {
+            let labels = [], data = [];
+            if(list.length !== 0) {
+                const map = {};
+                list.forEach(o => {
+                    if(!o.startDate || o.rank === 'super_vvip') return;
+                    const d = new Date(o.startDate); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                    map[key] = (map[key] || 0) + (parseFloat(o.price)||0);
+                });
+                labels = Object.keys(map).sort(); data = labels.map(k => map[k] || 0);
+            }
+            const displayLabels = labels.map(l => { const d = new Date(l + '-01'); return d.toLocaleDateString('th-TH', { year:'numeric', month:'short' }); });
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            const tickColor = isDark ? '#94a3b8' : '#64748b';
+
+            if(dashboardChart) { 
+                dashboardChart.data.labels = displayLabels; 
+                dashboardChart.data.datasets.data = data; 
+                dashboardChart.options.scales.x.ticks.color = tickColor; 
+                dashboardChart.options.scales.x.grid.color = gridColor;
+                dashboardChart.options.scales.y.ticks.color = tickColor; 
+                dashboardChart.options.scales.y.grid.color = gridColor;
+                dashboardChart.update(); 
+            } 
+            else {
+                dashboardChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { 
+                        labels: displayLabels, 
+                        datasets: [{ 
+                            label: 'รายได้ (฿)', 
+                            data: data, 
+                            backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                            borderColor: '#8b5cf6',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#8b5cf6'
+                        }] 
+                    },
+                    options: { 
+                        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, 
+                        scales: { 
+                            x: { grid: { display: true, color: gridColor }, ticks: { color: tickColor, font: { family: 'Kanit' } } }, 
+                            y: { grid: { display: true, color: gridColor }, ticks: { color: tickColor, font: { family: 'Kanit' } } } 
+                        } 
+                    }
+                });
+            }
+        }
+
+        function toggleDashboard() {
+            dashboardVisible = !dashboardVisible;
+            if(dashboardVisible) $('#dashboardSection').slideDown(); else $('#dashboardSection').slideUp();
+            localStorage.setItem('dashboardVisible', dashboardVisible ? 'true' : 'false'); updateDashboardToggleText();
+        }
+        function updateDashboardToggleText() { $('#toggleDashboardBtn').html(dashboardVisible ? '<i class="fa-solid fa-eye-slash"></i> <span>ซ่อน</span>' : '<i class="fa-solid fa-eye"></i> <span>แสดง Dashboard</span>'); }
+
+        function saveOrder() {
+            const id = $('#orderId').val(); const gameVal = gameSelectModal ? gameSelectModal.getValue() : '';
+            const gameName = gameVal === 'new_game' ? $('#customGameInput').val() : gameVal;
+            const customerName = $('#customerName').val(); const username = $('#username').val(); const password = $('#password').val(); const price = parseFloat($('#price').val()) || 0;
+            const rank = $('input[name="rank"]:checked').val() || 'none';
+            const status = rank === 'super_vvip' ? 'active' : (statusSelectModal ? statusSelectModal.getValue() : 'pending');
+            const notes = $('#adminNotes').val(); 
+            
+            const startDateStr = $('#startDate').val();
+            const endDateStr = $('#endDate').val();
+
+            if (!gameName || !customerName) return alert('กรุณากรอกชื่อเกม และ ชื่อลูกค้า');
+            if (rank !== 'super_vvip' && (!startDateStr || !endDateStr)) return alert('กรุณาระบุวันที่เริ่มและสิ้นสุด');
+
+            const contacts = []; $('.contact-row').each(function() { const type = $(this).find('select[name="contactType[]"]').val(); const value = $(this).find('input[name="contactValue[]"]').val(); if(value) contacts.push({ type, value }); });
+            const tasks = []; $('#taskListContainer input[name="tasks[]"]').each(function() { const val = $(this).val(); const done = $(this).closest('div').data('done') === true; if(val) tasks.push({ text: val, done: done }); });
+
+            const newOrder = { id: id || ('ord-' + Date.now()), gameName, customerName, username, password, price, status, rank, notes, startDate: startDateStr || null, endDate: endDateStr || null, contacts, tasks };
+
+            if (id) { const idx = orders.findIndex(o => o.id === id); if(idx !== -1) orders[idx] = newOrder; } else { orders.unshift(newOrder); }
+
+            saveData(); closeModal(); renderOrders(); renderDashboard(); showToast('บันทึกข้อมูลเรียบร้อย', 'success');
+        }
+
+        function toggleTask(orderId, taskIndex, checkbox) {
+            const order = orders.find(o => o.id === orderId);
+            if(order && order.tasks && order.tasks[taskIndex]) {
+                const isDone = checkbox.checked; order.tasks[taskIndex].done = isDone; saveData(); 
+                const listItem = $(checkbox).closest('li'); const textSpan = listItem.find('.task-text');
+                if(isDone) { textSpan.addClass('text-slate-400 line-through').removeClass('text-slate-700 dark:text-slate-200 font-medium'); } else { textSpan.removeClass('text-slate-400 line-through').addClass('text-slate-700 dark:text-slate-200 font-medium'); }
+                const totalTasks = order.tasks.length; const completed = order.tasks.filter(t => t.done).length;
+                const progress = totalTasks === 0 ? 0 : Math.round((completed / totalTasks) * 100);
+                $(`#progress-${orderId}`).css('width', `${progress}%`);
+            }
+        }
+
+        function exportDataToCSV(orderList, filename) {
+            if(orderList.length === 0) return showToast('ไม่มีข้อมูลในเดือนที่เลือก', 'error');
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+            csvContent += "ID,Game,Customer,StartDate,EndDate,Price,Status,Rank,Progress\n";
+            let totalRev = 0;
+            orderList.forEach(o => {
+                const completed = o.tasks ? o.tasks.filter(t => t.done).length : 0; 
+                const total = o.tasks ? o.tasks.length : 0; 
+                const progress = total === 0 ? "0%" : Math.round((completed/total)*100) + "%";
+                if(o.status !== 'canceled' && o.rank !== 'super_vvip') { totalRev += (parseFloat(o.price) || 0); }
+                const row = [ o.id, `"${o.gameName}"`, `"${o.customerName}"`, o.startDate || '-', o.endDate || '-', o.price, o.status, o.rank || 'none', progress ].join(",");
+                csvContent += row + "\r\n";
+            });
+            csvContent += `\n,,,Total Revenue,,${totalRev},,`;
+            
+            const encodedUri = encodeURI(csvContent); 
+            const link = document.createElement("a"); 
+            link.setAttribute("href", encodedUri); 
+            link.setAttribute("download", filename); 
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showToast('เริ่มดาวน์โหลดไฟล์ Report แล้ว', 'success');
+        }
+
+        function exportSummaryFiltered() {
+            const visibleOrders = getFilteredOrders();
+            exportDataToCSV(visibleOrders, 'filtered_report.csv');
+        }
+
+        function exportFullSummary() {
+            exportDataToCSV(orders, 'full_report.csv');
+        }
+
+        function exportMonth(yearMonth) {
+            const monthlyOrders = orders.filter(o => o.startDate && o.startDate.startsWith(yearMonth));
+            exportDataToCSV(monthlyOrders, `monthly_report_${yearMonth}.csv`);
+        }
+
+        function exportSelectedMonths() {
+            const selected = [];
+            $('.month-cb:checked').each(function() { selected.push($(this).val()); });
+            if(selected.length === 0) return showToast('กรุณาติ๊กเลือกอย่างน้อย 1 เดือน', 'error');
+
+            const multiMonthOrders = orders.filter(o => {
+                if (!o.startDate) return false;
+                const ym = o.startDate.substring(0, 7); 
+                return selected.includes(ym);
+            });
+            exportDataToCSV(multiMonthOrders, `multi_month_report_${Date.now()}.csv`);
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners}));
+            const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", "game_booster_backup.json"); document.body.appendChild(a); a.click(); a.remove();
+            showToast('ดาวน์โหลดไฟล์ Backup สำเร็จ', 'success');
+        }
+
+        function triggerImport() { document.getElementById('importFile').click(); }
+        function copyToClipboard(text) { if(!text) return; navigator.clipboard.writeText(text).then(() => { showToast('คัดลอกข้อความแล้ว!', 'success'); }, (err) => { console.error('Could not copy', err); }); }
+
+        function resetFilters() {
+            $('#searchInput').val(''); $('#filterStartDate').val(''); $('#filterEndDate').val('');
+            currentFilteredMonth = null; // ล้างค่าสถานะการกรองรายเดือน
+            if(gameFilter) gameFilter.clear(); if(statusFilter) statusFilter.setValue('all');
+            if(quickTimeSelect) quickTimeSelect.setValue('');
+            document.getElementById('sortOrder').value = 'newest';
+            renderOrders(); renderDashboard();
+        }
+
+        function smartMask(text, isPassword) {
+            if (!text) return '-'; if (isPassword) return '•'.repeat(Math.min(text.length, 10));
+            if (text.length <= 4) return text; return text.substring(0, 2) + '***' + text.substring(text.length - 2);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-'; const date = new Date(dateStr); return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        }
+
+        function toggleTheme() {
+            $('html').toggleClass('dark'); const isDark = $('html').hasClass('dark'); localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            if(dashboardChart) { dashboardChart.destroy(); dashboardChart = null; renderDashboard(); }
+        }
+
+        function initTheme() {
+            const theme = localStorage.getItem('theme'); if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) { $('html').addClass('dark'); } else { $('html').removeClass('dark'); }
+        }
+
+        function populateGameData() {}
+
+        function initTomSelects() {
+            const sortedGames = [...GAME_LIST].sort();
+            gameFilter = new TomSelect("#filterGame", { plugins: ['remove_button'], maxItems: null, create: false, sortField: { field: "text", direction: "asc" }, options: sortedGames.map(g => ({value: g, text: g})), placeholder: "เลือกเกม (ถ้าไม่เลือก = ทั้งหมด)", dropdownParent: 'body' });
+            gameFilter.on('change', () => { renderOrders(); renderDashboard(); });
+
+            statusFilter = new TomSelect("#filterStatus", { create: false, dropdownParent: 'body' });
+            statusFilter.on('change', () => { renderOrders(); renderDashboard(); });
+
+            new TomSelect("#sortOrder", { create: false, dropdownParent: 'body' });
+            quickTimeSelect = new TomSelect("#quickTimeFilter", { create: false, dropdownParent: 'body' });
+
+            const modalOptions = [ ...sortedGames.map(g => ({value: g, text: g})), {value: 'new_game', text: '+ เพิ่มเกมใหม่ (ระบุเอง)'} ];
+            gameSelectModal = new TomSelect("#gameSelect", { create: false, options: modalOptions, sortField: false, onChange: function(val) { if(val === 'new_game') { $('#customGameInput').removeClass('hidden').focus(); } else { $('#customGameInput').addClass('hidden'); } } });
+
+            statusSelectModal = new TomSelect("#status", { create: false, render: { option: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; }, item: function(data, escape) { return '<div>' + escape(data.text) + '</div>'; } } });
+
+            window.contactSelectConfig = { create: false, render: { option: function(data, escape) { const contactType = CONTACT_TYPES.find(c => c.value === data.value); const icon = contactType?.icon || 'fa-solid fa-link'; const color = contactType?.color || 'text-slate-500'; return `<div><i class="${icon} ${color} mr-2"></i>${escape(data.text)}</div>`; }, item: function(data, escape) { const contactType = CONTACT_TYPES.find(c => c.value === data.value); const icon = contactType?.icon || 'fa-solid fa-link'; const color = contactType?.color || 'text-slate-500'; return `<div><i class="${icon} ${color} mr-2"></i>${escape(data.text)}</div>`; } } };
+        }
+
+        function setupSearch() { $('#searchInput').on('input', function() { renderOrders(); renderDashboard(); }); }
+
+        function setupFlatpickr() {
+            flatpickr("#startDate", { locale: "th", dateFormat: "Y-m-d" }); flatpickr("#endDate", { locale: "th", dateFormat: "Y-m-d" });
+            flatpickr("#filterStartDate", { locale: "th", dateFormat: "Y-m-d", onChange: function() { currentFilteredMonth = null; renderOrders(); renderDashboard(); } });
+            flatpickr("#filterEndDate", { locale: "th", dateFormat: "Y-m-d", onChange: function() { currentFilteredMonth = null; renderOrders(); renderDashboard(); } });
+        }
+    </script>
+</body> 
+</html>
