@@ -67,8 +67,25 @@
 
         .ts-wrapper { width: 100%; }
         .ts-control { border-radius: 0.5rem; padding: 0.5rem 0.75rem; border-color: #e2e8f0; min-height: 44px; display: flex; align-items: center; font-size: 0.95rem; background-color: #f8fafc; }
-        .dark .ts-control { background-color: #0f172a; border-color: #334155; color: #e2e8f0; }
-        .dark .ts-control input { color: white; }
+        .dark .ts-control { 
+            background-color: #0f172a !important; /* bg-slate-900 */
+            border-color: #334155; 
+            color: #e2e8f0; 
+        }
+        .dark .ts-wrapper.single .ts-control .item {
+            background-color: transparent !important;
+            color: #e2e8f0 !important;
+        }
+        .dark .ts-wrapper.multi .ts-control .item {
+            background-color: #1e293b !important; /* bg-slate-800 */
+            color: #fff !important;
+            border: 1px solid #334155 !important;
+        }
+        .dark .ts-wrapper.single.input-active .ts-control {
+            background-color: #0f172a !important;
+        }
+        
+        .dark .ts-control input { color: white !important; }
         .ts-dropdown { z-index: 9999 !important; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); } 
         .dark .ts-dropdown { background-color: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
         .ts-dropdown .dropdown-input-wrap { padding: 8px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; }
@@ -102,10 +119,60 @@
         .order-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .order-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .dark .order-card:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.4); }
+      
     </style>
 </head>
 <body class="font-sans min-h-screen pb-20 bg-[#f8fafc] text-slate-800 dark:bg-gaming-dark dark:text-slate-200 transition-colors duration-300 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
-
+    
+    <div id="adModal" class="fixed inset-0 hidden overflow-y-auto" style="z-index: 40;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeAdModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl w-full border border-gray-200 dark:border-slate-700 flex flex-col max-h-[90vh] relative z-50">
+                <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-rectangle-ad mr-2 text-gaming-accent"></i>จัดการโฆษณาสปอนเซอร์</h3>
+                    <button onclick="closeAdModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden flex-1">
+                    <div class="lg:col-span-3 flex flex-col h-full overflow-hidden border border-gray-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-[#0f172a]/50">
+                        <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3"><i class="fa-solid fa-list text-slate-400 mr-1"></i> โฆษณาทั้งหมด</h4>
+                        <div id="adManagerList" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-2"></div>
+                    </div>
+                    
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-5 border border-gray-200 dark:border-slate-700 flex flex-col h-full overflow-hidden shadow-sm">
+                        <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4 shrink-0 border-b border-gray-100 dark:border-slate-700 pb-2" id="adFormTitle">✨ เพิ่มโฆษณาใหม่</h4>
+                        <form id="adForm" class="space-y-4 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                            <input type="hidden" id="adId">
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">หัวข้อโฆษณา</label>
+                                <input type="text" id="adTitle" class="w-full h-10 mt-1 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gaming-accent">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">URL รูปภาพโฆษณา</label>
+                                <div class="flex gap-2 mt-1">
+                                    <input type="text" id="adImageUrl" class="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gaming-accent" placeholder="https://...">
+                                    <button type="button" onclick="previewBannerImage()" class="h-10 px-4 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition" title="Preview"><i class="fa-solid fa-eye"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">ลิงก์ปลายทาง (Destination Link)</label>
+                                <input type="text" id="adLink" class="w-full h-10 mt-1 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gaming-accent">
+                            </div>
+                            <div class="flex items-center gap-2 mt-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-200 dark:border-slate-700">
+                                <input type="checkbox" id="adActive" checked class="accent-gaming-accent w-4 h-4 cursor-pointer">
+                                <label for="adActive" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">เปิดแสดงผลโฆษณานี้</label>
+                            </div>
+                        </form>
+                        <div class="flex gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 shrink-0">
+                            <button type="button" onclick="saveAd()" class="flex-1 bg-gaming-accent hover:bg-gaming-accent-hover text-white py-2.5 rounded-lg text-sm font-bold transition shadow-lg shadow-purple-500/20">บันทึกโฆษณา</button>
+                            <button type="button" onclick="resetAdForm()" class="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm font-medium transition">ล้าง</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <nav class="sticky top-0 z-40 glass-effect border-b border-gray-200/50 dark:border-slate-700/50 shadow-sm bg-white/70 dark:bg-gaming-dark/70">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20">
@@ -137,6 +204,11 @@
                         <span class="hidden sm:inline font-medium">Banners</span>
                     </button>
 
+                    <button type="button" onclick="openDonateModal()" class="w-10 h-10 sm:w-auto sm:px-4 flex justify-center items-center rounded-full sm:rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-lg border border-amber-500 text-sm gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span class="hidden sm:inline font-medium">Donate</span>
+                    </button>
+
                     <button type="button" onclick="openModal()" class="bg-gradient-to-r from-gaming-accent to-fuchsia-500 hover:from-gaming-accent-hover hover:to-fuchsia-600 text-white w-10 h-10 sm:w-auto sm:px-5 flex justify-center items-center rounded-full sm:rounded-lg transition shadow-lg shadow-purple-500/30 gap-2 font-medium">
                         <i class="fa-solid fa-plus"></i>
                         <span class="hidden sm:inline">เพิ่มงานจ้าง</span>
@@ -145,199 +217,209 @@
             </div>
         </div>
     </nav>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+ <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div id="bannerContainer" class="banner-container w-full h-40 sm:h-56 rounded-2xl overflow-hidden bg-slate-900 group relative border border-slate-700">
             <button class="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-gaming-accent backdrop-blur-sm text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all z-30" onclick="manualChangeBanner(-1)"><i class="fa-solid fa-chevron-left"></i></button>
             <button class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-gaming-accent backdrop-blur-sm text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all z-30" onclick="manualChangeBanner(1)"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col 2xl:flex-row gap-6 items-start">
         
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-blue-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
-                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">งานทั้งหมด</p>
-                <div class="flex justify-between items-end">
-                    <h3 class="text-3xl font-bold text-slate-800 dark:text-white" id="stat-total">0</h3>
-                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"><i class="fa-solid fa-layer-group text-blue-500 text-sm"></i></div>
-                </div>
-            </div>
-            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-slate-400 flex flex-col justify-between hover:-translate-y-1 transition-transform">
-                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">รอดำเนินการ</p>
-                <div class="flex justify-between items-end">
-                    <h3 class="text-3xl font-bold text-slate-700 dark:text-slate-300" id="stat-pending">0</h3>
-                    <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><i class="fa-regular fa-clock text-slate-500 text-sm"></i></div>
-                </div>
-            </div>
-            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-amber-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
-                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">กำลังดำเนินการ</p>
-                <div class="flex justify-between items-end">
-                    <h3 class="text-3xl font-bold text-amber-500" id="stat-active">0</h3>
-                    <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><i class="fa-solid fa-gamepad text-amber-500 text-sm"></i></div>
-                </div>
-            </div>
-            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-emerald-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
-                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">เสร็จสิ้น</p>
-                <div class="flex justify-between items-end">
-                    <h3 class="text-3xl font-bold text-emerald-500" id="stat-completed">0</h3>
-                    <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"><i class="fa-solid fa-check-circle text-emerald-500 text-sm"></i></div>
-                </div>
-            </div>
-            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-rose-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
-                <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">ยกเลิก</p>
-                <div class="flex justify-between items-end">
-                    <h3 class="text-3xl font-bold text-rose-500" id="stat-canceled">0</h3>
-                    <div class="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center"><i class="fa-solid fa-ban text-rose-500 text-sm"></i></div>
-                </div>
-            </div>
-            <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-gaming-accent group cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all hover:-translate-y-1 flex flex-col justify-between relative overflow-hidden" onclick="toggleRevenue()">
-                <div class="absolute -right-4 -top-4 w-16 h-16 bg-gaming-accent/10 rounded-full blur-xl group-hover:bg-gaming-accent/20 transition-all"></div>
-                <div class="flex items-center gap-2 mb-2 z-10">
-                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">รายได้รวม</p>
-                    <i class="fa-solid fa-eye-slash text-[10px] bg-slate-100 dark:bg-slate-800 p-1 rounded text-slate-400 group-hover:text-gaming-accent transition-colors" id="revenue-eye"></i>
-                </div>
-                <div class="flex justify-between items-end z-10">
-                    <h3 class="text-2xl xl:text-3xl font-bold text-gaming-accent select-none truncate" id="stat-revenue">฿*****</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex items-center justify-between mb-3 mt-8">
-            <h4 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="fa-solid fa-chart-line text-gaming-accent"></i> Analytics Dashboard</h4>
-            <div class="flex items-center gap-3">
-                <button id="toggleDashboardBtn" type="button" onclick="toggleDashboard()" class="text-xs bg-white dark:bg-gaming-card text-slate-600 dark:text-slate-300 px-4 py-1.5 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition shadow-sm font-medium flex items-center gap-2">
-                    <i class="fa-solid fa-eye-slash"></i> <span>ซ่อน</span>
+        <div id="sideAdsContainer" class="flex flex-col w-full 2xl:w-[320px] shrink-0 2xl:sticky 2xl:top-24 gap-4 2xl:h-[calc(100vh-8rem)] order-first">
+            <div class="flex justify-between items-center bg-white dark:bg-gaming-card rounded-xl p-3 border border-gray-200 dark:border-slate-700 shadow-sm shrink-0">
+                <span class="text-xs font-bold text-slate-400 tracking-wider uppercase"><i class="fa-solid fa-rectangle-ad mr-1"></i> Sponsored</span>
+                <button onclick="openAdModal()" class="text-slate-400 hover:text-gaming-accent transition-colors bg-slate-100 dark:bg-slate-800 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
+            <div id="sideAdList" class="flex flex-row justify-center items-stretch gap-4 overflow-x-auto snap-x snap-mandatory pb-4 pr-1 2xl:flex-col 2xl:justify-start 2xl:overflow-x-hidden 2xl:overflow-y-auto 2xl:pr-1 custom-scrollbar">
+                </div>
         </div>
-
-        <div id="dashboardSection" class="glass-card p-6 rounded-2xl shadow-sm mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">รายได้เข้าจริง (หักยกเลิก)</p>
-                    <div id="dash-totalRevenue" class="text-3xl font-bold text-emerald-500 mt-2">฿0</div>
+        
+        <div class="flex-1 w-full min-w-0">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-blue-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">งานทั้งหมด</p>
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-3xl font-bold text-slate-800 dark:text-white" id="stat-total">0</h3>
+                        <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center"><i class="fa-solid fa-layer-group text-blue-500 text-sm"></i></div>
+                    </div>
                 </div>
-                <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">คำสั่งซื้อที่นับรวม</p>
-                    <div id="dash-totalOrders" class="text-3xl font-bold text-slate-800 dark:text-white mt-2">0</div>
+                <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-slate-400 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">รอดำเนินการ</p>
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-3xl font-bold text-slate-700 dark:text-slate-300" id="stat-pending">0</h3>
+                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center"><i class="fa-regular fa-clock text-slate-500 text-sm"></i></div>
+                    </div>
                 </div>
-                <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">วันทำงานสะสม (Days)</p>
-                    <div id="dash-totalDays" class="text-3xl font-bold text-sky-500 mt-2">0</div>
+                <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-amber-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">กำลังดำเนินการ</p>
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-3xl font-bold text-amber-500" id="stat-active">0</h3>
+                        <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><i class="fa-solid fa-gamepad text-amber-500 text-sm"></i></div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-emerald-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">เสร็จสิ้น</p>
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-3xl font-bold text-emerald-500" id="stat-completed">0</h3>
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"><i class="fa-solid fa-check-circle text-emerald-500 text-sm"></i></div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-rose-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">ยกเลิก</p>
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-3xl font-bold text-rose-500" id="stat-canceled">0</h3>
+                        <div class="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center"><i class="fa-solid fa-ban text-rose-500 text-sm"></i></div>
+                    </div>
+                </div>
+                <div class="glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-gaming-accent group cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all hover:-translate-y-1 flex flex-col justify-between relative overflow-hidden" onclick="toggleRevenue()">
+                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-gaming-accent/10 rounded-full blur-xl group-hover:bg-gaming-accent/20 transition-all"></div>
+                    <div class="flex items-center gap-2 mb-2 z-10">
+                        <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">รายได้รวม</p>
+                        <i class="fa-solid fa-eye-slash text-[10px] bg-slate-100 dark:bg-slate-800 p-1 rounded text-slate-400 group-hover:text-gaming-accent transition-colors" id="revenue-eye"></i>
+                    </div>
+                    <div class="flex justify-between items-end z-10">
+                        <h3 class="text-2xl xl:text-3xl font-bold text-gaming-accent select-none truncate" id="stat-revenue">฿*****</h3>
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 bg-white dark:bg-[#0f172a]/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700">
-                    <h5 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">แนวโน้มรายได้</h5>
-                    <div style="height: 250px; position: relative;">
-                        <canvas id="revenueChart"></canvas>
+            <div class="flex items-center justify-between mb-3 mt-8">
+                <h4 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="fa-solid fa-chart-line text-gaming-accent"></i> Analytics Dashboard</h4>
+                <div class="flex items-center gap-3">
+                    <button id="toggleDashboardBtn" type="button" onclick="toggleDashboard()" class="text-xs bg-white dark:bg-gaming-card text-slate-600 dark:text-slate-300 px-4 py-1.5 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition shadow-sm font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-eye-slash"></i> <span>ซ่อน</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="dashboardSection" class="glass-card p-6 rounded-2xl shadow-sm mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">รายได้เข้าจริง (หักยกเลิก)</p>
+                        <div id="dash-totalRevenue" class="text-3xl font-bold text-emerald-500 mt-2">฿0</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">คำสั่งซื้อที่นับรวม</p>
+                        <div id="dash-totalOrders" class="text-3xl font-bold text-slate-800 dark:text-white mt-2">0</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700/50">
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">วันทำงานสะสม (Days)</p>
+                        <div id="dash-totalDays" class="text-3xl font-bold text-sky-500 mt-2">0</div>
                     </div>
                 </div>
-                
-                <div class="bg-white dark:bg-[#0f172a]/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700 flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h5 class="text-sm font-bold text-slate-700 dark:text-slate-300">สรุปรายเดือน</h5>
-                        <div class="flex items-center gap-2">
-                            <button onclick="exportSelectedMonths()" class="text-[11px] bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-400 px-2.5 py-1.5 rounded-md transition shadow-sm font-medium flex items-center gap-1">
-                                <i class="fa-solid fa-file-export"></i> Export เลือก
-                            </button>
-                            <button onclick="exportSummaryFiltered()" class="text-[11px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-800/50 px-2.5 py-1.5 rounded-md transition flex items-center gap-1 font-medium shadow-sm">
-                                <i class="fa-solid fa-download"></i> All View
-                            </button>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white dark:bg-[#0f172a]/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <h5 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">แนวโน้มรายได้</h5>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="revenueChart"></canvas>
                         </div>
                     </div>
-                    <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar max-h-[250px] pr-2">
-                        <table class="w-full text-sm">
-                            <thead class="sticky top-0 bg-white dark:bg-[#0f172a] z-10">
-                                <tr class="text-slate-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
-                                    <th class="w-8 py-2 pl-2"><input type="checkbox" id="checkAllMonths" class="accent-gaming-accent cursor-pointer rounded" onchange="toggleAllMonths(this)"></th>
-                                    <th class="text-left py-2 font-medium">เดือน</th>
-                                    <th class="text-right py-2 font-medium">รายได้</th>
-                                    <th class="text-right py-2 font-medium">งาน</th>
-                                    <th class="w-10"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-monthly" class="text-slate-700 dark:text-slate-200"></tbody>
-                        </table>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-2 text-center"><i class="fa-solid fa-info-circle mr-1"></i>คลิกที่ชื่อเดือนเพื่อกรอง/ยกเลิกกรอง</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="glass-card p-5 rounded-2xl shadow-sm mb-6 border border-gray-100 dark:border-slate-700 relative z-20">
-            <div class="flex justify-between items-center mb-4">
-                 <h4 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="fa-solid fa-sliders text-gaming-accent"></i> ตัวกรองค้นหา & ส่งออก</h4>
-                 <button onclick="resetFilters()" class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors font-medium">
-                     <i class="fa-solid fa-rotate-right"></i> ล้างค่า
-                 </button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                <div class="lg:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">ค้นหา</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10"></i>
-                        <input type="text" id="searchInput" placeholder="ชื่อเกม, ลูกค้า..." class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg pl-9 pr-3 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent transition text-sm">
+                    
+                    <div class="bg-white dark:bg-[#0f172a]/50 p-5 rounded-xl border border-gray-100 dark:border-slate-700 flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h5 class="text-sm font-bold text-slate-700 dark:text-slate-300">สรุปรายเดือน</h5>
+                            <div class="flex items-center gap-2">
+                                <button onclick="exportSelectedMonths()" class="text-[11px] bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-400 px-2.5 py-1.5 rounded-md transition shadow-sm font-medium flex items-center gap-1">
+                                    <i class="fa-solid fa-file-export"></i> Export เลือก
+                                </button>
+                                <button onclick="exportSummaryFiltered()" class="text-[11px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-800/50 px-2.5 py-1.5 rounded-md transition flex items-center gap-1 font-medium shadow-sm">
+                                    <i class="fa-solid fa-download"></i> All View
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar max-h-[250px] pr-2">
+                            <table class="w-full text-sm">
+                                <thead class="sticky top-0 bg-white dark:bg-[#0f172a] z-10">
+                                    <tr class="text-slate-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+                                        <th class="w-8 py-2 pl-2"><input type="checkbox" id="checkAllMonths" class="accent-gaming-accent cursor-pointer rounded" onchange="toggleAllMonths(this)"></th>
+                                        <th class="text-left py-2 font-medium">เดือน</th>
+                                        <th class="text-right py-2 font-medium">รายได้</th>
+                                        <th class="text-right py-2 font-medium">งาน</th>
+                                        <th class="w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-monthly" class="text-slate-700 dark:text-slate-200"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-2 text-center"><i class="fa-solid fa-info-circle mr-1"></i>คลิกที่ชื่อเดือนเพื่อกรอง/ยกเลิกกรอง</p>
                     </div>
                 </div>
-                <div class="lg:col-span-1">
-                    <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-regular fa-calendar-check mr-1"></i>ช่วงเวลาด่วน</label>
-                    <select id="quickTimeFilter" class="w-full" autocomplete="off" onchange="applyQuickTimeFilter()">
-                        <option value="">-- กำหนดเอง --</option>
-                        <option value="this_month">เดือนนี้</option>
-                        <option value="last_month">เดือนที่แล้ว</option>
-                        <option value="this_year">ปีนี้</option>
-                        <option value="all">ทั้งหมด</option>
-                    </select>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl shadow-sm mb-6 border border-gray-100 dark:border-slate-700 relative z-20">
+                <div class="flex justify-between items-center mb-4">
+                     <h4 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2"><i class="fa-solid fa-sliders text-gaming-accent"></i> ตัวกรองค้นหา & ส่งออก</h4>
+                     <button onclick="resetFilters()" class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors font-medium">
+                         <i class="fa-solid fa-rotate-right"></i> ล้างค่า
+                     </button>
                 </div>
-                <div class="lg:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">ช่วงเวลา (เริ่ม - สิ้นสุด)</label>
-                    <div class="flex gap-1">
-                        <input type="text" id="filterStartDate" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 text-sm" placeholder="จากวันที่">
-                        <input type="text" id="filterEndDate" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 text-sm" placeholder="ถึงวันที่">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                    <div class="lg:col-span-1">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">ค้นหา</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10"></i>
+                            <input type="text" id="searchInput" placeholder="ชื่อเกม, ลูกค้า..." class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg pl-9 pr-3 focus:outline-none focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent transition text-sm">
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-regular fa-calendar-check mr-1"></i>ช่วงเวลาด่วน</label>
+                        <select id="quickTimeFilter" class="w-full" autocomplete="off" onchange="applyQuickTimeFilter()">
+                            <option value="">-- กำหนดเอง --</option>
+                            <option value="this_month">เดือนนี้</option>
+                            <option value="last_month">เดือนที่แล้ว</option>
+                            <option value="this_year">ปีนี้</option>
+                            <option value="all">ทั้งหมด</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">ช่วงเวลา (เริ่ม - สิ้นสุด)</label>
+                        <div class="flex gap-1">
+                            <input type="text" id="filterStartDate" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none flatpickr-input active" placeholder="จากวันที่">
+                            <input type="text" id="filterEndDate" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none flatpickr-input active" placeholder="ถึงวันที่">
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">เกม</label>
+                        <select id="filterGame" class="w-full" placeholder="เลือกเกม..." multiple autocomplete="off"></select>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">สถานะ</label>
+                        <select id="filterStatus" class="w-full" placeholder="สถานะทั้งหมด" autocomplete="off">
+                            <option value="all">สถานะทั้งหมด</option>
+                            <option value="pending">⏳ รอดำเนินการ</option>
+                            <option value="active">🎮 กำลังเล่น</option>
+                            <option value="completed">✅ เสร็จสิ้น</option>
+                            <option value="canceled">❌ ยกเลิก</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-solid fa-sort mr-1"></i>เรียงลำดับ</label>
+                        <select id="sortOrder" class="w-full" autocomplete="off" onchange="renderOrders()">
+                            <option value="newest">อัปเดตล่าสุด</option>
+                            <option value="oldest">เก่าสุดก่อน</option>
+                            <option value="price_desc">ราคาสูง - ต่ำ</option>
+                            <option value="price_asc">ราคาต่ำ - สูง</option>
+                            <option value="urgency">ความสำคัญ (Rank)</option>
+                        </select>
                     </div>
                 </div>
-                <div class="lg:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">เกม</label>
-                    <select id="filterGame" class="w-full" placeholder="เลือกเกม..." multiple autocomplete="off"></select>
-                </div>
-                <div class="lg:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 ml-1">สถานะ</label>
-                    <select id="filterStatus" class="w-full" placeholder="สถานะทั้งหมด" autocomplete="off">
-                        <option value="all">สถานะทั้งหมด</option>
-                        <option value="pending">⏳ รอดำเนินการ</option>
-                        <option value="active">🎮 กำลังเล่น</option>
-                        <option value="completed">✅ เสร็จสิ้น</option>
-                        <option value="canceled">❌ ยกเลิก</option>
-                    </select>
-                </div>
-                <div class="lg:col-span-1">
-                    <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-solid fa-sort mr-1"></i>เรียงลำดับ</label>
-                    <select id="sortOrder" class="w-full" autocomplete="off" onchange="renderOrders()">
-                        <option value="newest">อัปเดตล่าสุด</option>
-                        <option value="oldest">เก่าสุดก่อน</option>
-                        <option value="price_desc">ราคาสูง - ต่ำ</option>
-                        <option value="price_asc">ราคาต่ำ - สูง</option>
-                        <option value="urgency">ความสำคัญ (Rank)</option>
-                    </select>
-                </div>
+                <p class="text-[11px] text-slate-400 mt-3"><i class="fa-solid fa-circle-info mr-1"></i> ตัวกรองนี้จะส่งผลกับการแสดงผลบนหน้าจอ, Dashboard และข้อมูลเมื่อกดส่งออก (Export Report) พร้อมๆ กัน</p>
             </div>
-            <p class="text-[11px] text-slate-400 mt-3"><i class="fa-solid fa-circle-info mr-1"></i> ตัวกรองนี้จะส่งผลกับการแสดงผลบนหน้าจอ, Dashboard และข้อมูลเมื่อกดส่งออก (Export Report) พร้อมๆ กัน</p>
-        </div>
 
-        <div id="ordersSection" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10"></div>
+            <div id="ordersSection" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10"></div>
 
-        <div id="emptyState" class="hidden text-center py-24 glass-card rounded-2xl border border-dashed border-gray-300 dark:border-slate-700">
-            <div class="inline-block p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 mb-4 shadow-inner"><i class="fa-solid fa-ghost text-5xl text-slate-400 dark:text-slate-500 animate-pulse"></i></div>
-            <h3 class="text-xl font-bold text-slate-800 dark:text-white">ไม่พบรายการที่ค้นหา</h3>
-            <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">ลองปรับตัวกรอง หรือสร้างออเดอร์ใหม่เพื่อเริ่มงาน</p>
-            <button onclick="openModal()" class="mt-6 px-6 py-2 bg-slate-800 text-white rounded-full text-sm font-medium hover:bg-gaming-accent transition shadow-lg">สร้างออเดอร์เลย</button>
-        </div>
-    </div>
+            <div id="emptyState" class="hidden text-center py-24 glass-card rounded-2xl border border-dashed border-gray-300 dark:border-slate-700">
+                <div class="inline-block p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 mb-4 shadow-inner"><i class="fa-solid fa-ghost text-5xl text-slate-400 dark:text-slate-500 animate-pulse"></i></div>
+                <h3 class="text-xl font-bold text-slate-800 dark:text-white">ไม่พบรายการที่ค้นหา</h3>
+                <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">ลองปรับตัวกรอง หรือสร้างออเดอร์ใหม่เพื่อเริ่มงาน</p>
+                <button onclick="openModal()" class="mt-6 px-6 py-2 bg-slate-800 text-white rounded-full text-sm font-medium hover:bg-gaming-accent transition shadow-lg">สร้างออเดอร์เลย</button>
+            </div>
+        </div> 
 
-    <div id="orderModal" class="fixed inset-0 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    </div> <div id="orderModal" class="fixed inset-0 hidden overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeModal()"></div>
             <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-visible shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-gray-200 dark:border-slate-700 relative z-50">
@@ -346,7 +428,7 @@
                     <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2" id="modalTitle">
                         <i class="fa-solid fa-clipboard-list text-gaming-accent"></i> ข้อมูลงานจ้าง
                     </h3>
-                    <button onclick="closeModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="closeModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 
                 <div class="px-6 py-6">
@@ -356,12 +438,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ชื่อเกม <span class="text-rose-500">*</span></label>
-                                <select id="gameSelect" class="w-full" placeholder="ค้นหาหรือเลือกเกม..." autocomplete="off"><option value="">เลือกเกม...</option></select>
-                                <input type="text" id="customGameInput" class="mt-2 w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none hidden transition" placeholder="พิมพ์ชื่อเกมใหม่...">
+                                <select id="gameSelect" class="w-full dark:bg-slate-900" placeholder="ค้นหาหรือเลือกเกม..." autocomplete="off"><option value="">เลือกเกม...</option></select>
+                                <input type="text" id="customGameInput" class="mt-2 w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none hidden transition" placeholder="พิมพ์ชื่อเกมใหม่...">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ลูกค้า / ผู้จ้าง <span class="text-rose-500">*</span></label>
-                                <input type="text" id="customerName" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400 transition" placeholder="ชื่อเล่น หรือ ID ลูกค้า">
+                                <input type="text" id="customerName" class="w-full h-11 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400 transition" placeholder="ชื่อเล่น หรือ ID ลูกค้า">
                             </div>
                         </div>
 
@@ -385,7 +467,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div>
                              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex justify-between items-center">
                                  <span>ช่องทางติดต่อ</span>
@@ -393,7 +474,6 @@
                              </label>
                              <div id="contactListContainer" class="space-y-2"></div>
                         </div>
-
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">ระดับงาน (Rank Priority)</label>
                             <div class="flex flex-wrap gap-2">
@@ -438,7 +518,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fa-solid fa-sack-dollar text-slate-400 mr-1"></i> ราคา (บาท)</label>
-                                    <input type="number" id="price" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400 text-lg font-bold" placeholder="0">
+                                    <input type="number" id="price" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400 text-lg font-bold" placeholder="0">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">สถานะงาน</label>
@@ -453,15 +533,13 @@
                                 </div>
                             </div>
                         </div>
-
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex justify-between items-center">
-                                <span><i class="fa-solid fa-list-check text-slate-400 mr-1"></i> รายการที่ต้องทำ (Tasks)</span>
-                                <button type="button" onclick="addTaskInput()" class="text-xs bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-100 px-2 py-1 rounded font-medium transition">+ เพิ่มรายการ</button>
-                            </label>
-                            <div id="taskListContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-2 rounded-lg"></div>
+                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex justify-between items-center">
+                                 <span><i class="fa-solid fa-list-check text-slate-400 mr-1"></i> รายการที่ต้องทำ (Tasks)</span>
+                                 <button type="button" onclick="addTaskInput()" class="text-xs bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-100 px-2 py-1 rounded font-medium transition">+ เพิ่มรายการ</button>
+                             </label>
+                             <div id="taskListContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-2 rounded-lg"></div>
                         </div>
-
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> หมายเหตุ (Admin Notes)</label>
                             <textarea id="adminNotes" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-gaming-accent/50 focus:border-gaming-accent focus:outline-none placeholder-slate-400" placeholder="บันทึกย่อสำหรับแอดมินเท่านั้น..."></textarea>
@@ -481,7 +559,7 @@
         </div>
     </div>
 
-    <div id="bannerModal" class="fixed inset-0 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div id="bannerModal" class="fixed inset-0 hidden overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeBannerModal()"></div>
             <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl w-full border border-gray-200 dark:border-slate-700 flex flex-col max-h-[90vh] relative z-50">
@@ -544,10 +622,10 @@
         </div>
     </div>
 
-    <div id="imagePreviewModal" class="fixed inset-0 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div id="imagePreviewModal" class="fixed inset-0 hidden z-60" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 bg-black/80 transition-opacity backdrop-blur-sm" onclick="closePreviewModal()"></div>
-            <div class="inline-block bg-transparent rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle max-w-4xl w-full relative z-">
+            <div class="inline-block bg-transparent rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle max-w-4xl w-full relative z-50">
                 <div class="relative">
                     <button onclick="closePreviewModal()" class="absolute -top-12 right-0 text-white hover:text-rose-500 text-3xl transition drop-shadow-md"><i class="fa-solid fa-xmark"></i></button>
                     <img id="previewImageTarget" src="" class="w-full h-auto rounded-xl shadow-2xl border border-slate-700 object-contain max-h-[80vh]" alt="Preview">
@@ -556,17 +634,36 @@
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-">
+    <div id="donateModal" class="fixed inset-0 hidden overflow-y-auto" style="z-index: 100;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeDonateModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl w-full border border-gray-200 dark:border-slate-700 relative z-50">
+                <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-hand-holding-dollar text-amber-500 mr-2"></i> สนับสนุนผู้พัฒนา</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">เลือกช่องทางและคัดลอกข้อมูลเพื่อบริจาค</p>
+                    </div>
+                    <button onclick="closeDonateModal()" class="w-10 h-10 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="flex flex-wrap gap-2" id="donateTabButtons"></div>
+                    <div id="donateTabContent" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-50">
         <div class="bg-slate-800 border-l-4 border-gaming-success text-white px-5 py-3.5 rounded-lg shadow-2xl flex items-center gap-3 min-w-[200px]">
             <i class="fa-solid fa-circle-check text-gaming-success text-lg" id="toastIcon"></i>
             <span id="toastMessage" class="font-medium text-sm">Copied!</span>
         </div>
     </div>
 
-    <div id="confirmModal" class="fixed inset-0 hidden">
+    <div id="confirmModal" class="fixed inset-0 hidden z-">
         <div id="confirmOverlay" class="fixed inset-0 confirm-overlay transition-opacity"></div>
         <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="bg-white dark:bg-gaming-card rounded-xl p-6 max-w-sm w-full border border-gray-200 dark:border-slate-700 shadow-2xl confirm-box relative z- text-center transform transition-transform scale-100">
+            <div class="bg-white dark:bg-gaming-card rounded-xl p-6 max-w-sm w-full border border-gray-200 dark:border-slate-700 shadow-2xl confirm-box relative z-50 text-center transform transition-transform scale-100">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-rose-100 dark:bg-rose-900/30 mb-4" id="confirmIconBox">
                     <i class="fa-solid fa-triangle-exclamation text-rose-500 text-xl" id="confirmIcon"></i>
                 </div>
@@ -584,7 +681,7 @@
         <div id="socialContainer" class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-4"></div>
         
         <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
-            &copy; 2024 - <span id="currentYear"></span> <a href="https://facebook.com/kchaiwat24" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Chaiwat Kwanta (KeepPlayIT)</a> . All rights reserved.
+            © 2024 - <span id="currentYear"></span> <a href="https://facebook.com/kchaiwat24" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">Chaiwat Kwanta (KeepPlayIT)</a> . All rights reserved.
         </p>
     </footer>
     <script>
@@ -619,82 +716,191 @@
             { value: 'twitter', text: 'Twitter', icon: 'fa-brands fa-twitter', color: 'text-sky-400' },
             { value: 'link', text: 'Link', icon: 'fa-solid fa-link', color: 'text-blue-500' }
         ];
+
+        const DONATE_OPTIONS = {
+            tabs: [
+                {
+                    id: 'tab-thai-bank',
+                    label: 'Thai Bank',
+                    isActive: 1,
+                    items: [
+                        { bank: 'Kasikorn Bank (KBank)', accountName: 'นาย ไชยวัฒน์ ขวัญทา', accountNumber: '123-4-56789-0', branch: 'สาขาแหลมฉบัง', logo: 'https://www.kasikornbank.com/SiteCollectionDocuments/about/img/logo/logo.png', isActive: 1 },
+                        { bank: 'Bangkok Bank', accountName: 'นาย ไชยวัฒน์ ขวัญทา', accountNumber: '000-0-00000-0', branch: 'สาขาแหลมฉบัง', logo: 'https://www.riverside-plaza.com/wp-content/uploads/2024/04/6778a59cf74c69e8ca78e845cf550f54.jpg', isActive: 0 },
+                        { bank: 'Siam Commercial Bank (SCB)', accountName: 'นาย ไชยวัฒน์ ขวัญทา', accountNumber: '653-422680-7', branch: 'สาขาแหลมฉบัง', logo: 'https://play-lh.googleusercontent.com/j-9a3HbVZoX337-MLdkmYt75yUfN5ahis8rOnE09972cFLdVn7Z5Dzu3Guo8ldUv2H4x', isActive: 1 }
+                    ]
+                },
+                {
+                    id: 'tab-true-money',
+                    label: 'TrueMoney',
+                    isActive: 1,
+                    items: [
+                        { wallet: '095-939-4524', name: 'Chaiwat Kwanta', logo: 'https://play-lh.googleusercontent.com/6I2IYbIg4rhGUgs0UxP_5q6wmJmlBjBrlQ9f0_FAN94yOzwmrtEteifCdPPd1-chY_NX', isActive: 1 }
+                    ]
+                },
+                {
+                    id: 'tab-promptpay',
+                    label: 'PromptPay',
+                    isActive: 1,
+                    items: [
+                        { promptId: '095-939-4524', type: 'เบอร์โทรศัพท์', name: 'Chaiwat Kwanta', logo: 'https://www.bot.or.th/content/dam/bot/icons/icon-thaiqr.png', isActive: 1 }
+                    ]
+                },
+                {
+                    id: 'tab-other',
+                    label: 'Other',
+                    isActive:0,
+                    items: [
+                        { label: 'PayPal Email', value: 'donate@keepplayit.com', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg', isActive: 1 },
+                        { label: 'Line Official', value: '@keepplayit', logo: 'https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg', isActive: 1 }
+                    ]
+                }
+            ]
+        };
             
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         let orders = []; let banners = [];
+        let advertisements = JSON.parse(localStorage.getItem('gameBoosterAds')) || [
+           { id: 1, title: 'เรทราคาจ้างเล่น Genshin Impact', image: 'https://i.ibb.co/mVf7TJrJ/unnamed-1.webp', link: 'https://i.ibb.co/mVf7TJrJ/unnamed-1.webp', active: true }
+        ];
+
         let isRevenueVisible = false; let currentBanner = 0; let bannerInterval;
         let gameSelectModal, statusSelectModal, gameFilter, statusFilter, bannerTagSelect, quickTimeSelect;
         let toastTimeout = null; let dashboardChart = null;
         let dashboardVisible = true;
-        let currentFilteredMonth = null; // 📌 ตัวแปรเก็บเดือนที่กำลัง Filter อยู่
+        let currentFilteredMonth = null; 
 
-        // 📌 ตั้งค่าช่องทางติดต่อ (JSON Config) Config Social
-        // isActive: 1 = แสดงผล, 0 = ซ่อน
-        const socialLinks = [
-            { 
-                name: 'Discord', 
-                url: '#', 
-                icon: 'fa-brands fa-discord', 
-                hoverClass: 'hover:bg-[#5865F2] hover:border-[#5865F2]', 
-                isActive: 1 
-            },
-            { 
-                name: 'Youtube', 
-                url: 'https://www.youtube.com/@KeepPlayIT', 
-                icon: 'fa-brands fa-youtube', 
-                hoverClass: 'hover:bg-[#FF0000] hover:border-[#FF0000]', 
-                isActive: 1 
-            },
-            { 
-                name: 'Facebook', 
-                url: 'https://facebook.com/kchaiwat24', 
-                icon: 'fa-brands fa-facebook-f', 
-                hoverClass: 'hover:bg-[#1877F2] hover:border-[#1877F2]', 
-                isActive: 1 
-            },
-            { 
-                name: 'X (Twitter)', 
-                url: 'https://x.com/ckwant20230', 
-                icon: 'fa-brands fa-x-twitter', 
-                hoverClass: 'hover:bg-black hover:border-black dark:hover:bg-white dark:hover:text-black', 
-                isActive: 1 
-            },
-            { 
-                name: 'Line', 
-                url: 'https://line.me/ti/p/ebslS6W2XV', 
-                icon: 'fa-brands fa-line', 
-                hoverClass: 'hover:bg-[#00B900] hover:border-[#00B900]', 
-                isActive: 1 
-            },
-            { 
-                name: 'Instagram', 
-                url: 'https://www.instagram.com/chaiwat.k0912', 
-                icon: 'fa-brands fa-instagram', 
-                hoverClass: 'hover:bg-[#E1306C] hover:border-[#E1306C]', 
-                isActive: 1 
-            },
-            { 
-                name: 'VK', 
-                url: '#', 
-                icon: 'fa-brands fa-vk', 
-                hoverClass: 'hover:bg-[#4C75A3] hover:border-[#4C75A3]', 
-                isActive: 0 
+        function closeAdModal() {
+            $('#adModal').addClass('hidden');
+        }
+
+        function renderSideAds() {
+            const container = $('#sideAdList');
+            container.empty();
+            
+            const activeAds = [...advertisements].filter(ad => ad.active).reverse();
+            
+            if (activeAds.length === 0) {
+                container.append('<p class="text-xs text-center text-slate-400 py-4">ไม่มีโฆษณาในขณะนี้</p>');
+                return;
             }
+
+            activeAds.forEach(ad => {
+                const adHtml = `
+                    <a href="${ad.link}" target="_blank" class="block relative transition-all duration-300 bg-white dark:bg-gaming-card rounded-xl shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden group hover:-translate-y-1 hover:shadow-xl hover:border-gaming-accent/50 shrink-0 w-[240px] sm:w-[280px] 2xl:w-full snap-start">
+                        <div class="relative w-full flex items-center justify-center bg-black/5 dark:bg-black/20"> 
+                            <img src="${ad.image}" onerror="this.src='https://placehold.co/600x800/1e293b/8b5cf6?text=Image+Error'" class="w-full h-auto max-h-[160px] 2xl:max-h-[300px] object-contain group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <div class="p-3 text-center bg-white dark:bg-gaming-card border-t border-gray-100 dark:border-slate-700 relative z-10">
+                            <h5 class="text-sm font-bold text-gaming-accent mb-0.5 truncate">${ad.title}</h5>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">คลิกเพื่อดูรายละเอียด</p>
+                        </div>
+                    </a>
+                `;
+                container.append(adHtml);
+            });
+            toggleFloatingAd();
+        }
+
+        function openAdModal() {
+            $('#adModal').removeClass('hidden');
+            renderAdManagerList();
+            resetAdForm();
+        }
+        function renderAdManagerList() {
+            const list = $('#adManagerList');
+            list.empty();
+            
+            [...advertisements].reverse().forEach(ad => {
+                list.append(`
+                <div class="bg-white dark:bg-[#0b1220]/50 border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-4 hover:border-gaming-accent transition">
+                    <div class="w-16 h-20 rounded-lg flex-shrink-0 relative overflow-hidden shadow-sm bg-slate-200 dark:bg-slate-800">
+                        <img src="${ad.image}" onerror="this.src='https://placehold.co/600x800?text=Error'" class="w-full h-full object-cover opacity-90">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h5 class="text-sm font-bold dark:text-white truncate">${ad.title}</h5>
+                        <span class="text-[10px] truncate block text-slate-400 mt-1">${ad.link}</span>
+                        <div class="mt-1.5"><span class="text-[10px] px-2 py-0.5 rounded font-medium ${ad.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}">${ad.active ? 'Active' : 'Disabled'}</span></div>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <button onclick="editAd(${ad.id})" class="p-1.5 bg-slate-50 dark:bg-slate-800 rounded text-slate-400 hover:text-blue-500 transition"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteAd(${ad.id})" class="p-1.5 bg-slate-50 dark:bg-slate-800 rounded text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>`);
+            });
+        }
+        function saveAd() {
+            const id = $('#adId').val();
+            const title = $('#adTitle').val();
+            if(!title) return showToast('กรุณาระบุหัวข้อโฆษณา', 'error');
+
+            const newAd = {
+                id: id ? parseInt(id) : Date.now(),
+                title: title,
+                image: $('#adImageUrl').val(),
+                link: $('#adLink').val() || '#',
+                active: $('#adActive').is(':checked')
+            };
+
+            if(id) {
+                const index = advertisements.findIndex(a => a.id == id);
+                if(index > -1) advertisements[index] = newAd;
+            } else {
+                advertisements.push(newAd);
+            }
+
+            localStorage.setItem('gameBoosterAds', JSON.stringify(advertisements));
+            resetAdForm();
+            renderAdManagerList();
+            renderSideAds(); 
+            showToast('บันทึกโฆษณาเรียบร้อย', 'success');
+        }
+        function editAd(id) {
+            const ad = advertisements.find(a => a.id == id);
+            if(!ad) return;
+            $('#adId').val(ad.id);
+            $('#adTitle').val(ad.title);
+            $('#adImageUrl').val(ad.image);
+            $('#adLink').val(ad.link);
+            $('#adActive').prop('checked', ad.active);
+            $('#adFormTitle').html('📝 แก้ไขโฆษณา');
+        }
+
+        function deleteAd(id) {
+            showConfirm('ต้องการลบโฆษณานี้ใช่หรือไม่?').then(ok => {
+                if(!ok) return;
+                advertisements = advertisements.filter(a => a.id !== id);
+                localStorage.setItem('gameBoosterAds', JSON.stringify(advertisements));
+                renderAdManagerList();
+                renderSideAds();
+                showToast('ลบโฆษณาเรียบร้อย', 'success');
+            });
+        }
+        function resetAdForm() {
+            document.getElementById('adForm').reset();
+            $('#adId').val('');
+            $('#adFormTitle').html('✨ เพิ่มโฆษณาใหม่');
+            $('#adActive').prop('checked', true);
+        }
+        
+        const socialLinks = [
+            { name: 'Discord', url: 'https://discord.com/invite/GwQFSkCVUX', icon: 'fa-brands fa-discord', hoverClass: 'hover:bg-[#5865F2] hover:border-[#5865F2]', isActive: 1 },
+            { name: 'Youtube', url: 'https://www.youtube.com/@KeepPlayIT', icon: 'fa-brands fa-youtube', hoverClass: 'hover:bg-[#FF0000] hover:border-[#FF0000]', isActive: 1 },
+            { name: 'Facebook', url: 'https://facebook.com/kchaiwat24', icon: 'fa-brands fa-facebook-f', hoverClass: 'hover:bg-[#1877F2] hover:border-[#1877F2]', isActive: 1 },
+            { name: 'X (Twitter)', url: 'https://x.com/ckwant20230', icon: 'fa-brands fa-x-twitter', hoverClass: 'hover:bg-black hover:border-black dark:hover:bg-white dark:hover:text-black', isActive: 1 },
+            { name: 'Line', url: 'https://line.me/ti/p/ebslS6W2XV', icon: 'fa-brands fa-line', hoverClass: 'hover:bg-[#00B900] hover:border-[#00B900]', isActive: 1 },
+            { name: 'Instagram', url: 'https://www.instagram.com/chaiwat.k0912', icon: 'fa-brands fa-instagram', hoverClass: 'hover:bg-[#E1306C] hover:border-[#E1306C]', isActive: 1 },
+            { name: 'VK', url: '#', icon: 'fa-brands fa-vk', hoverClass: 'hover:bg-[#4C75A3] hover:border-[#4C75A3]', isActive: 0 }
         ];
 
-        // 📌 ฟังก์ชันเรนเดอร์ปุ่ม Social ลงในหน้าเว็บ
         const socialContainer = document.getElementById('socialContainer');
         socialLinks.filter(item => item.isActive === 1).forEach(social => {
             const btn = document.createElement('a');
             btn.href = social.url;
             btn.target = '_blank';
             btn.title = social.name;
-            // ใส่ Base Class และ Hover Class ตามที่ตั้งค่าใน JSON
             btn.className = `w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-white dark:hover:text-white transition-all shadow-sm border border-gray-200 dark:border-slate-700 ${social.hoverClass}`;
-            
             const icon = document.createElement('i');
             icon.className = `${social.icon} text-lg`;
-            
             btn.appendChild(icon);
             socialContainer.appendChild(btn);
         });
@@ -706,6 +912,7 @@
             dashboardVisible = (localStorage.getItem('dashboardVisible') !== 'false');
             if(!dashboardVisible) $('#dashboardSection').hide();
             updateDashboardToggleText();
+            $(window).on('resize', toggleFloatingAd);
         });
         
         function handleRankChange(radio) {
@@ -741,9 +948,29 @@
         }
 
         function initApp() { 
-            renderOrders(); renderBanners(); renderBannerList(); updateStats(); renderDashboard(); 
+            renderOrders(); 
+            renderBanners(); 
+            renderBannerList(); 
+            updateStats(); 
+            renderDashboard(); 
+            renderSideAds(); 
         }
 
+        function toggleFloatingAd() {
+            const activeAds = advertisements.filter(ad => ad.active);
+            const floatingAd = $('#floatingLeftAd');
+            
+            if (floatingAd.length > 0 && activeAds.length > 0 && window.innerWidth >= 2048) { 
+                floatingAd.removeClass('hidden').addClass('flex');
+                const firstActiveAd = activeAds;
+                $('#adMainTitle').text(firstActiveAd.title);
+                $('#adMainImage').attr('src', firstActiveAd.image);
+                $('#adMainLink').attr('href', firstActiveAd.link);
+            } else if (floatingAd.length > 0) {
+                floatingAd.addClass('hidden').removeClass('flex');
+            }
+        }
+        
         function saveData() {
             localStorage.setItem('gameBoosterOrders', JSON.stringify(orders));
             localStorage.setItem('gameBoosterBanners', JSON.stringify(banners));
@@ -759,7 +986,7 @@
             
             const today = new Date();
             let start, end;
-            currentFilteredMonth = null; // ล้างสถานะกรองรายเดือน
+            currentFilteredMonth = null; 
 
             if(val === 'this_month') {
                 start = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -1011,7 +1238,11 @@
                         <div class="p-5 flex-1 flex flex-col gap-4">
                             <div class="flex justify-between text-[13px] text-slate-500">${dateDisplay}${dateBadge}</div>
                             <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner"><div class="progress-bar bg-gradient-to-r from-gaming-accent to-fuchsia-500 h-2 rounded-full relative" style="width: ${progress}%" id="progress-${order.id}"></div></div>
-                            <ul class="space-y-2.5 mt-1" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`).join('') : ''}</ul>
+                            <div class="flex items-center justify-between mt-3">
+                                <span class="text-sm text-slate-500 dark:text-slate-400">รายการงาน (${totalTasks})</span>
+                                <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
+                            </div>
+                            <ul class="space-y-2.5 mt-2" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`).join('') : ''}</ul>
                             
                             <div class="mt-1 flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:border-gaming-accent transition-colors">
                                 <input type="text" id="newTask-${order.id}" class="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-200 px-2 py-1 focus:outline-none" placeholder="+ เพิ่มงานด่วน..." onkeypress="if(event.key==='Enter') quickAddTask('${order.id}')">
@@ -1069,7 +1300,120 @@
             if(!bannerTagSelect) { bannerTagSelect = new TomSelect("#bannerTagColor", { create: false, dropdownParent: 'body', render: { option: (d,e)=>`<div><span class="inline-block w-3 h-3 rounded-full mr-2 bg-${d.value}-500"></span>${e(d.text)}</div>`, item: (d,e)=>`<div><span class="inline-block w-3 h-3 rounded-full mr-2 bg-${d.value}-500"></span>${e(d.text)}</div>` } }); }
         }
         function closeBannerModal() { $('#bannerModal').addClass('hidden'); }
+        function openDonateModal() { renderDonateModal(); $('#donateModal').removeClass('hidden'); }
+        function closeDonateModal() { $('#donateModal').addClass('hidden'); }
+        
+        function renderDonateModal() {
+            const visibleTabs = DONATE_OPTIONS.tabs.filter(tab => tab.isActive === 1);
+            const tabButtons = $('#donateTabButtons');
+            const tabContent = $('#donateTabContent');
+            
+            tabButtons.removeClass('flex-wrap').addClass('overflow-x-auto pb-2 custom-scrollbar flex-nowrap items-center');
+            tabButtons.empty(); tabContent.empty();
+
+            if (visibleTabs.length === 0) {
+                tabContent.append('<div class="bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-5 text-sm text-slate-700 dark:text-slate-300">ไม่มีช่องทางรับบริจาค</div>');
+                return;
+            }
+
+            visibleTabs.forEach((tab, index) => {
+                const button = $('<button type="button" class="donate-tab-btn px-5 py-2.5 rounded-full text-sm font-medium flex-shrink-0 whitespace-nowrap transition-colors"></button>');
+                button.text(tab.label); button.attr('data-tab', tab.id);
+                button.on('click', () => switchDonateTab(tab.id));
+                if (index === 0) { button.addClass('bg-gaming-accent text-white'); } else { button.addClass('bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'); }
+                tabButtons.append(button);
+
+                const panel = $('<div class="donate-tab-panel"></div>');
+                panel.attr('id', tab.id);
+                if (index !== 0) panel.addClass('hidden');
+
+                const tabCard = $('<div class="bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-5"></div>');
+                tabCard.append(`<h4 class="text-sm font-semibold text-slate-800 dark:text-white mb-4">${tab.label}</h4>`);
+
+                const imgClass = "w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-contain bg-white p-2 border border-gray-200 dark:border-slate-700 shadow-sm";
+
+                tab.items.filter(item => item.isActive === 1).forEach(item => {
+                    if (tab.id === 'tab-thai-bank') {
+                        tabCard.append(`
+                            <div class="flex justify-between items-center mb-4 gap-4">
+                                <div class="space-y-3 text-sm text-slate-700 dark:text-slate-300 flex-1">
+                                    <div><span class="block font-medium">ธนาคาร:</span> ${item.bank}</div>
+                                    <div><span class="block font-medium">ชื่อบัญชี:</span> ${item.accountName}</div>
+                                    <div><span class="block font-medium">เลขที่บัญชี:</span> ${item.accountNumber}</div>
+                                    <div><span class="block font-medium">สาขา:</span> ${item.branch}</div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <img src="${item.logo}" alt="${item.bank}" class="${imgClass}">
+                                </div>
+                            </div>
+                            <button type="button" onclick="copyToClipboard('${item.accountNumber.replace(/-/g, '')}')" class="mt-2 w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition shadow-sm"><i class="fa-regular fa-copy mr-2"></i> คัดลอกเลขที่บัญชี</button>
+                            <div class="border-t border-gray-200 dark:border-slate-700 my-5"></div>
+                        `);
+                    } else if (tab.id === 'tab-true-money') {
+                        tabCard.append(`
+                            <div class="flex justify-between items-center mb-4 gap-4">
+                                <div class="space-y-3 text-sm text-slate-700 dark:text-slate-300 flex-1">
+                                    <div><span class="block font-medium">หมายเลข TrueMoney Wallet:</span> ${item.wallet}</div>
+                                    <div><span class="block font-medium">ชื่อผู้รับ:</span> ${item.name}</div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <img src="${item.logo}" alt="TrueMoney" class="${imgClass}">
+                                </div>
+                            </div>
+                            <button type="button" onclick="copyToClipboard('${item.wallet.replace(/-/g, '')}')" class="mt-2 w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition shadow-sm"><i class="fa-regular fa-copy mr-2"></i> คัดลอกหมายเลข</button>
+                            <div class="border-t border-gray-200 dark:border-slate-700 my-5"></div>
+                        `);
+                    } else if (tab.id === 'tab-promptpay') {
+                        const qrUrl = generatePromptPayQRUrl(item.promptId, item.name);
+                        tabCard.append(`
+                            <div class="flex justify-between items-start mb-4 gap-4">
+                                <div class="space-y-3 text-sm text-slate-700 dark:text-slate-300 flex-1 mt-1">
+                                    <div><span class="block font-medium">PromptPay ID / เบอร์:</span> ${item.promptId}</div>
+                                    <div><span class="block font-medium">ชื่อ:</span> ${item.name}</div>
+                                    <div><span class="block font-medium">ประเภท:</span> ${item.type}</div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <img src="${item.logo}" alt="PromptPay" class="${imgClass}">
+                                </div>
+                            </div>
+                            ${qrUrl ? `<div class="mx-auto w-48 h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 bg-white flex items-center justify-center mb-5 shadow-sm"><img src="${qrUrl}" alt="PromptPay QR" class="w-full h-full object-contain p-2"></div>` : `<div class="text-sm text-red-500 mb-4">ไม่สามารถสร้าง QR code ได้</div>`}
+                            <button type="button" onclick="copyToClipboard('${item.promptId.replace(/-/g, '')}')" class="mt-2 w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition shadow-sm"><i class="fa-regular fa-copy mr-2"></i> คัดลอก PromptPay</button>
+                            <div class="border-t border-gray-200 dark:border-slate-700 my-5"></div>
+                        `);
+                    } else if (tab.id === 'tab-other') {
+                        const logoHtml = item.logo ? `<div class="flex-shrink-0"><img src="${item.logo}" alt="${item.label}" class="${imgClass}"></div>` : '';
+                        tabCard.append(`
+                            <div class="flex justify-between items-center mb-4 gap-4">
+                                <div class="space-y-3 text-sm text-slate-700 dark:text-slate-300 flex-1">
+                                    <div><span class="block font-medium">${item.label}:</span> <span class="break-all">${item.value}</span></div>
+                                </div>
+                                ${logoHtml}
+                            </div>
+                            <button type="button" onclick="copyToClipboard('${item.value}')" class="mt-2 w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition shadow-sm"><i class="fa-regular fa-copy mr-2"></i> คัดลอก ${item.label}</button>
+                            <div class="border-t border-gray-200 dark:border-slate-700 my-5"></div>
+                        `);
+                    }
+                });
+
+                tabCard.children('.border-t').last().remove();
+                panel.append(tabCard); tabContent.append(panel);
+            });
+        }
+
+        function switchDonateTab(tabId) {
+            $('.donate-tab-btn').removeClass('bg-gaming-accent text-white').addClass('bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300');
+            $(`.donate-tab-btn[data-tab="${tabId}"]`).removeClass('bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300').addClass('bg-gaming-accent text-white');
+            $('.donate-tab-panel').addClass('hidden');
+            $(`#${tabId}`).removeClass('hidden');
+        }
+        function generatePromptPayQRUrl(promptId, name) {
+            if (!promptId) return '';
+            const url = `https://promptpay.io/${promptId}`;
+            const params = name ? `?name=${encodeURIComponent(name)}` : '';
+            return url + params;
+        }
         function resetBannerForm() { document.getElementById('bannerForm').reset(); $('#bannerId').val(''); $('#bannerFormTitle').html('✨ เพิ่ม Banner ใหม่'); $('#bannerActive').prop('checked', true); if(bannerTagSelect) bannerTagSelect.clear(); }
+        
         function renderBannerList() {
             const list = $('#bannerList'); list.empty();
             [...banners].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(b => {
@@ -1088,7 +1432,19 @@
             saveData(); resetBannerForm(); renderBannerList(); renderBanners(); showToast('บันทึก Banner เรียบร้อย', 'success');
         }
         function editBanner(id) { const b = banners.find(x => x.id == id); if(!b) return; $('#bannerId').val(b.id); $('#bannerTitle').val(b.title); $('#bannerSubtitle').val(b.subtitle); $('#bannerImage').val(b.image); $('#bannerTagText').val(b.tagText); $('#bannerActive').prop('checked', b.active); if(bannerTagSelect) bannerTagSelect.setValue(b.tagColor); $('#bannerFormTitle').html('📝 แก้ไข Banner'); }
-        function previewBannerImage() { const url = $('#bannerImage').val(); if(url) { $('#previewImageTarget').attr('src', url); $('#imagePreviewModal').removeClass('hidden'); } }
+        function previewBannerImage() {
+            const bannerUrl = $('#bannerImage').val().trim();
+            const adUrl = $('#adImageUrl').val().trim();
+            const url = bannerUrl || adUrl;
+            
+            if (url) {
+                $('#previewImageTarget').attr('src', url);
+                $('#imagePreviewModal').removeClass('hidden');
+                showToast('เปิดดูตัวอย่างรูปภาพแล้ว', 'success');
+            } else {
+                showToast('กรุณาใส่ URL รูปภาพก่อน', 'error');
+            }
+        }
         function closePreviewModal() { $('#imagePreviewModal').addClass('hidden'); }
 
         function openModal() {
@@ -1112,7 +1468,8 @@
             $('#modalTitle').html('<i class="fa-solid fa-pen-to-square text-gaming-accent"></i> แก้ไขข้อมูลงาน'); $('#orderId').val(order.id);
             
             if(gameSelectModal) { if(GAME_LIST.includes(order.gameName)) { gameSelectModal.setValue(order.gameName); } else { gameSelectModal.setValue('new_game'); $('#customGameInput').val(order.gameName).removeClass('hidden'); } }
-            $('#customerName').val(order.customerName); $('#username').val(order.username); $('#password').val(order.password); $('#price').val(order.price); $('#adminNotes').val(order.notes || '');
+            $('#customerName').val(order.customerName + ' (Copy)'); 
+            $('#username').val(order.username); $('#password').val(order.password); $('#price').val(order.price); $('#adminNotes').val(order.notes || '');
             
             const fpStart = document.querySelector('#startDate')._flatpickr; const fpEnd = document.querySelector('#endDate')._flatpickr;
             const rankVal = order.rank || 'none'; $(`input[name="rank"][value="${rankVal}"]`).prop('checked', true);
@@ -1127,7 +1484,7 @@
         
         function addContactInput(type = 'facebook', value = '') {
             const id = Date.now() + Math.floor(Math.random() * 10000);
-            const html = `<div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}"><div class="w-1/3"><select id="contactSelect-${id}" name="contactType[]" class="w-full">${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}</select></div><input type="text" value="${value}" name="contactValue[]" class="flex-1 h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร..."><button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div>`;
+            const html = `<div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}"><div class="w-1/3"><select id="contactSelect-${id}" name="contactType[]" class="w-full">${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}</select></div><input type="text" value="${value}" name="contactValue[]" class="flex-1 h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร..."><button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
             $('#contactListContainer').append(html); new TomSelect(`#contactSelect-${id}`, window.contactSelectConfig);
         }
         
@@ -1165,7 +1522,16 @@
                     const j = JSON.parse(e.target.result);
                     showConfirm('ยืนยันการ Import ข้อมูล?', 'fa-file-import', 'amber').then(ok => {
                         if(!ok) { $(input).val(''); return; }
-                        if(j.orders) { orders = j.orders; banners = j.banners || banners; } else orders = j;
+                        if(j.orders) { 
+                            orders = j.orders; 
+                            banners = j.banners || banners; 
+                            if(j.advertisements) {
+                                advertisements = j.advertisements;
+                                localStorage.setItem('gameBoosterAds', JSON.stringify(advertisements));
+                            }
+                        } else {
+                            orders = j;
+                        }
                         saveData(); initApp(); showToast('Import ข้อมูลสำเร็จ', 'success');
                     });
                 } catch(err){ showToast('ไฟล์ JSON ไม่ถูกต้อง', 'error'); }
@@ -1223,7 +1589,6 @@
             Object.keys(months).sort().reverse().forEach(k=>{
                 const d = new Date(k + '-01'); const label = d.toLocaleString('th-TH', { year: 'numeric', month: 'short' });
                 
-                // เช็คว่าเดือนนี้ถูกกรองอยู่หรือไม่
                 const isFiltered = currentFilteredMonth === k;
                 const trClass = isFiltered ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : '';
                 const textClass = isFiltered ? 'text-gaming-accent font-bold' : '';
@@ -1244,13 +1609,11 @@
             buildChart(filtered);
         }
 
-        // 📌 คลิกรายเดือน (Toggle Filter)
         function filterByMonth(yearMonth) {
             const fpStart = document.querySelector('#filterStartDate')._flatpickr;
             const fpEnd = document.querySelector('#filterEndDate')._flatpickr;
 
             if (currentFilteredMonth === yearMonth) {
-                // ถ้าคลิกเดือนเดิมที่กำลังฟิลเตอร์อยู่ ให้เคลียร์ค่าออก
                 fpStart.clear();
                 fpEnd.clear();
                 currentFilteredMonth = null;
@@ -1261,14 +1624,13 @@
                 return;
             }
 
-            // ถ้าคลิกเดือนใหม่ ให้เซ็ตค่าเป็นเดือนนั้น
             const [year, month] = yearMonth.split('-');
             const start = new Date(year, month - 1, 1);
             const end = new Date(year, month, 0); 
 
             fpStart.setDate(start);
             fpEnd.setDate(end);
-            currentFilteredMonth = yearMonth; // อัปเดตตัวแปรสถานะ
+            currentFilteredMonth = yearMonth; 
 
             if(quickTimeSelect) quickTimeSelect.setValue(''); 
             renderOrders();
@@ -1365,6 +1727,15 @@
             saveData(); closeModal(); renderOrders(); renderDashboard(); showToast('บันทึกข้อมูลเรียบร้อย', 'success');
         }
 
+        function uncheckAllTasks(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if(!order || !order.tasks || order.tasks.length === 0) return;
+            order.tasks.forEach(task => task.done = false);
+            saveData();
+            renderSingleOrderTasks(orderId);
+            showToast('ยกเลิกเครื่องหมายงานทั้งหมดแล้ว', 'success');
+        }
+
         function toggleTask(orderId, taskIndex, checkbox) {
             const order = orders.find(o => o.id === orderId);
             if(order && order.tasks && order.tasks[taskIndex]) {
@@ -1428,8 +1799,16 @@
         }
 
         function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners}));
-            const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", "game_booster_backup.json"); document.body.appendChild(a); a.click(); a.remove();
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements}));
+            const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `game_booster_backup_${year}${month}${date}${hours}${minutes}${seconds}.json`); document.body.appendChild(a); a.click(); a.remove();
             showToast('ดาวน์โหลดไฟล์ Backup สำเร็จ', 'success');
         }
 
@@ -1438,7 +1817,7 @@
 
         function resetFilters() {
             $('#searchInput').val(''); $('#filterStartDate').val(''); $('#filterEndDate').val('');
-            currentFilteredMonth = null; // ล้างค่าสถานะการกรองรายเดือน
+            currentFilteredMonth = null; 
             if(gameFilter) gameFilter.clear(); if(statusFilter) statusFilter.setValue('all');
             if(quickTimeSelect) quickTimeSelect.setValue('');
             document.getElementById('sortOrder').value = 'newest';
