@@ -1065,7 +1065,7 @@
             const completed = o.tasks ? o.tasks.filter(t => t.done).length : 0; const total = o.tasks ? o.tasks.length : 0; const progress = total === 0 ? "0" : Math.round((completed/total)*100);
             
             let statusTh = 'รอดำเนินการ'; if(o.status==='active') statusTh='กำลังดำเนินการ'; if(o.status==='completed') statusTh='เสร็จสิ้น'; if(o.status==='canceled') statusTh='ยกเลิกแล้ว';
-            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
+            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ: ${o.tasks ? o.tasks.map(t => `- ${t.text}`).join('\n') : 'ไม่มีรายการ'}\n สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
             copyToClipboard(msg);
         }
 
