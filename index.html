@@ -283,6 +283,20 @@
                         <h3 class="text-2xl xl:text-3xl font-bold text-gaming-accent select-none truncate" id="stat-revenue">฿*****</h3>
                     </div>
                 </div>
+                <div class="col-span-2 md:col-span-6 glass-card p-5 rounded-2xl shadow-sm border-b-4 border-b-cyan-500 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                    <p class="text-cyan-500 dark:text-cyan-400 text-xs font-medium uppercase tracking-wider mb-2">รวมจ้างเล่น/อื่นๆ เครดิตทั้งหมด</p>
+                    
+                    <div class="flex justify-between items-end gap-2">
+                        <h3 id="credit-display" class="text-3xl font-bold text-cyan-500 truncate transition-all duration-300">
+                            <span id="credit-number">0</span> 
+                            <span class="text-lg font-medium"> / ครั้ง</span> 
+                        </h3>
+                        
+                        <div class="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0 mb-1">
+                            <i class="fa-solid fa-chart-pie text-cyan-500 text-sm"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex items-center justify-between mb-3 mt-8">
@@ -1870,6 +1884,27 @@
             flatpickr("#filterStartDate", { locale: "th", dateFormat: "Y-m-d", onChange: function() { currentFilteredMonth = null; renderOrders(); renderDashboard(); } });
             flatpickr("#filterEndDate", { locale: "th", dateFormat: "Y-m-d", onChange: function() { currentFilteredMonth = null; renderOrders(); renderDashboard(); } });
         }
+        function updateCreditDisplay(rawValue) {
+            const numberElement = document.getElementById('credit-number');
+            const displayElement = document.getElementById('credit-display');
+            const formattedNum = Intl.NumberFormat('en-US', {
+                notation: "compact",
+                maximumFractionDigits: 1, // ให้มีทศนิยมแค่ 1 ตำแหน่ง
+                roundingMode: "trunc"     // <--- เพิ่มบรรทัดนี้เพื่อสั่งตัดเศษทิ้ง ไม่ปัดขึ้น
+            }).format(rawValue);
+            numberElement.innerText = formattedNum;
+            displayElement.classList.remove('text-xl', 'text-2xl', 'text-3xl');
+            const textLength = formattedNum.length;
+            if (textLength >= 6) {
+                displayElement.classList.add('text-xl');
+            } else if (textLength >= 4) {
+                displayElement.classList.add('text-2xl');
+            } else {
+                displayElement.classList.add('text-3xl');
+            }
+        }
+        const apiData = 1550000; 
+        updateCreditDisplay(apiData); 
     </script>
 </body> 
 </html>
