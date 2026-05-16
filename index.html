@@ -204,6 +204,11 @@
                         <span class="hidden sm:inline font-medium">Banners</span>
                     </button>
 
+                    <button type="button" onclick="openCreditsModal()" class="w-10 h-10 sm:w-auto sm:px-4 flex justify-center items-center rounded-full sm:rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white transition shadow-lg border border-cyan-500 text-sm gap-2" title="Edit total credits">
+                        <i class="fa-solid fa-coins"></i>
+                        <span class="hidden sm:inline font-medium">Credits</span>
+                    </button>
+
                     <button type="button" onclick="openDonateModal()" class="w-10 h-10 sm:w-auto sm:px-4 flex justify-center items-center rounded-full sm:rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-lg border border-amber-500 text-sm gap-2">
                         <i class="fa-solid fa-hand-holding-dollar"></i>
                         <span class="hidden sm:inline font-medium">Donate</span>
@@ -667,6 +672,27 @@
         </div>
     </div>
 
+    <div id="creditsModal" class="fixed inset-0 hidden overflow-y-auto z-50" aria-labelledby="credits-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeCreditsModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border border-gray-200 dark:border-slate-700 relative z-50">
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white" id="credits-modal-title"><i class="fa-solid fa-coins text-cyan-500 mr-2"></i>แก้ไขเครดิตรวม</h3>
+                    <button onclick="closeCreditsModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-5">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">จำนวนเครดิตทั้งหมด (ตัวเลข)</label>
+                    <input type="number" id="creditsInput" class="w-full h-12 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-300 focus:border-cyan-300 focus:outline-none" placeholder="เช่น 0">
+                    <!-- <p class="text-xs text-slate-400 mt-2">ค่านี้จะแสดงบนบัตรสรุปเครดิต และจะถูกบันทึกใน Backup/Restore</p> -->
+                </div>
+                <div class="p-4 border-t border-gray-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end gap-3">
+                    <button type="button" onclick="closeCreditsModal()" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition">ยกเลิก</button>
+                    <button type="button" onclick="saveCredits()" class="px-5 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white font-bold transition shadow-sm">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-50">
         <div class="bg-slate-800 border-l-4 border-gaming-success text-white px-5 py-3.5 rounded-lg shadow-2xl flex items-center gap-3 min-w-[200px]">
             <i class="fa-solid fa-circle-check text-gaming-success text-lg" id="toastIcon"></i>
@@ -728,7 +754,9 @@
             { value: 'discord', text: 'Discord', icon: 'fa-brands fa-discord', color: 'text-indigo-500' },
             { value: 'tel', text: 'เบอร์โทร', icon: 'fa-solid fa-phone', color: 'text-slate-500' },
             { value: 'twitter', text: 'Twitter', icon: 'fa-brands fa-twitter', color: 'text-sky-400' },
-            { value: 'link', text: 'Link', icon: 'fa-solid fa-link', color: 'text-blue-500' }
+            { value: 'link', text: 'Link', icon: 'fa-solid fa-link', color: 'text-blue-500' },
+            { value: 'email', text: 'Email', icon: 'fa-solid fa-envelope', color: 'text-red-500' },
+            { value: 'Instagram', text: 'Instagram', icon: 'fa-brands fa-instagram', color: 'text-pink-500' }
         ];
 
         const DONATE_OPTIONS = {
@@ -782,6 +810,7 @@
         let toastTimeout = null; let dashboardChart = null;
         let dashboardVisible = true;
         let currentFilteredMonth = null; 
+        let TOTAL_CREDITS = parseFloat(localStorage.getItem('gameBoosterTotalCredits')) || 0;
 
         function closeAdModal() {
             $('#adModal').addClass('hidden');
@@ -988,6 +1017,7 @@
         function saveData() {
             localStorage.setItem('gameBoosterOrders', JSON.stringify(orders));
             localStorage.setItem('gameBoosterBanners', JSON.stringify(banners));
+            localStorage.setItem('gameBoosterTotalCredits', TOTAL_CREDITS);
             if (typeof API_URL !== 'undefined' && API_URL) {
                 fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ orders, banners }) }).catch(console.error);
             }
@@ -1079,7 +1109,16 @@
             const completed = o.tasks ? o.tasks.filter(t => t.done).length : 0; const total = o.tasks ? o.tasks.length : 0; const progress = total === 0 ? "0" : Math.round((completed/total)*100);
             
             let statusTh = 'รอดำเนินการ'; if(o.status==='active') statusTh='กำลังดำเนินการ'; if(o.status==='completed') statusTh='เสร็จสิ้น'; if(o.status==='canceled') statusTh='ยกเลิกแล้ว';
-            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ: ${o.tasks ? o.tasks.map(t => `- ${t.text}`).join('\n') : 'ไม่มีรายการ'}\n สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
+            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ:\n ${o.tasks ? o.tasks.map(t => `- ${t.text}`).join('\n') : 'ไม่มีรายการ'}\n สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
+            copyToClipboard(msg);
+        }
+
+        function copyReceiptDaily(id) {
+            const o = orders.find(x => x.id === id); if(!o) return;
+            // const msg = `🎮 รายการงานประจำวันที่ ${formatDate(new Date())}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ: ${o.tasks ? o.tasks.filter(t => !t.done).map(t => `- ${t.text}`).join('\n') : 'ไม่มีงานวันนี้'}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\nขอบคุณที่ใช้บริการครับ!`;
+            //const msg = `🎮 รายการงานประจำวันที่ ${formatDate(new Date())}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ:\n ${o.tasks ? o.tasks.filter(t => !t.done).map(t => `- ${t.text}`).join('\n') : 'ไม่มีงานวันนี้'}\n 📅 ประจำวันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(new Date())}\n สถานะ: เล่นเรียบร้อย ✅`;
+            const msg = `🎮 รายการงานประจำวันที่ ${formatDate(new Date())}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ:\n ${o.tasks ? o.tasks.map(t => `- ${t.text}`).join('\n') : 'ไม่มีรายการ'}\n 📅 ประจำวันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(new Date())}\n สถานะ: เล่นเรียบร้อย ✅`;
+            
             copyToClipboard(msg);
         }
 
@@ -1205,6 +1244,10 @@
                         const info = CONTACT_TYPES.find(t => t.value === c.type) || { icon: 'fa-link', color: 'text-slate-500' };
                         let displayVal = c.value; let href = c.value.startsWith('http') ? c.value : '#'; let target = '_blank';
                         if(c.type === 'tel') { href = `tel:${c.value}`; target = ''; if(c.value.length >= 10) displayVal = c.value.substring(0,3) + '-XXX-' + c.value.substring(c.value.length-4); } else if (c.type === 'line' || c.type === 'discord') { href = '#'; target = ''; if(c.value.length > 4) displayVal = c.value.substring(0,2) + '***' + c.value.substring(c.value.length-2); } else if (c.type === 'facebook' || c.type === 'twitter') { displayVal = 'Link'; }
+                        // ผif(c.type === 'email') { displayVal = c.value.substring(0, c.value.indexOf('@')) + '***'; }
+                        if(c.type === 'email') { 
+                            displayVal = c.value.substring(0, 2) + '***' + c.value.substring(c.value.indexOf('@')); 
+                        }
                         contactsHtml += `<div class="flex items-center gap-1 text-xs bg-white dark:bg-[#0f172a] rounded-md border border-gray-200 dark:border-slate-700 pr-1 group/badge transition hover:border-gaming-accent shadow-sm"><a href="${href}" target="${target}" class="flex items-center gap-1.5 pl-2 py-1 ${href==='#'?'cursor-default':''}"><i class="${info.icon} ${info.color}"></i><span class="max-w-[80px] truncate text-slate-600 dark:text-slate-400 group-hover/badge:text-gaming-accent font-medium">${displayVal}</span></a><button onclick="copyToClipboard('${c.value}')" class="text-slate-400 hover:text-emerald-500 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800" title="Copy"><i class="fa-regular fa-copy"></i></button></div>`;
                     });
                     contactsHtml += '</div>';
@@ -1265,10 +1308,14 @@
 
                             ${order.notes ? `<div class="mt-auto pt-3 border-t border-dashed border-gray-200 dark:border-slate-700"><p class="text-[11px] text-amber-600 dark:text-amber-400/80 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-800/30"><i class="fa-solid fa-note-sticky mr-1"></i> ${order.notes}</p></div>` : '<div class="mt-auto"></div>'}
                         </div>
-
+                        <div class="bg-gray-50 dark:bg-[#0b1220]/80 p-3 border-t border-gray-100 dark:border-slate-700/50 text-center">
+                            <button onclick="copyReceiptDaily('${order.id}')" class="w-full text-xs font-bold text-gaming-accent hover:text-white bg-indigo-50 hover:bg-gaming-accent dark:bg-indigo-900/20 dark:hover:bg-gaming-accent transition py-2 rounded-md border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
+                                <i class="fa-solid fa-receipt mr-1"></i> คัดลอกสรุป <span class="text-red-500 dark:text-yellow-400">รายวัน</span> ส่งลูกค้า
+                            </button>
+                        </div>
                         <div class="bg-gray-50 dark:bg-[#0b1220]/80 p-3 border-t border-gray-100 dark:border-slate-700/50 text-center">
                             <button onclick="copyReceipt('${order.id}')" class="w-full text-xs font-bold text-gaming-accent hover:text-white bg-indigo-50 hover:bg-gaming-accent dark:bg-indigo-900/20 dark:hover:bg-gaming-accent transition py-2 rounded-md border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
-                                <i class="fa-solid fa-receipt mr-1"></i> คัดลอกสรุปส่งลูกค้า
+                                <i class="fa-solid fa-receipt mr-1"></i> คัดลอกสรุป <span class="text-red-500 dark:text-yellow-400">ทั้งหมด</span> ส่งลูกค้า
                             </button>
                         </div>
                     </div>`;
@@ -1316,6 +1363,20 @@
         function closeBannerModal() { $('#bannerModal').addClass('hidden'); }
         function openDonateModal() { renderDonateModal(); $('#donateModal').removeClass('hidden'); }
         function closeDonateModal() { $('#donateModal').addClass('hidden'); }
+        function openCreditsModal() {
+            $('#creditsInput').val(TOTAL_CREDITS);
+            $('#creditsModal').removeClass('hidden');
+        }
+        function closeCreditsModal() { $('#creditsModal').addClass('hidden'); }
+        function saveCredits() {
+            const val = parseFloat($('#creditsInput').val());
+            if(isNaN(val) || !isFinite(val)) return showToast('กรุณากรอกตัวเลขที่ถูกต้อง', 'error');
+            TOTAL_CREDITS = val;
+            localStorage.setItem('gameBoosterTotalCredits', TOTAL_CREDITS);
+            updateCreditDisplay(TOTAL_CREDITS);
+            closeCreditsModal();
+            showToast('บันทึกเครดิตทั้งหมดเรียบร้อย', 'success');
+        }
         
         function renderDonateModal() {
             const visibleTabs = DONATE_OPTIONS.tabs.filter(tab => tab.isActive === 1);
@@ -1542,6 +1603,11 @@
                             if(j.advertisements) {
                                 advertisements = j.advertisements;
                                 localStorage.setItem('gameBoosterAds', JSON.stringify(advertisements));
+                            }
+                            if(j.totalCredits !== undefined) {
+                                TOTAL_CREDITS = parseFloat(j.totalCredits) || TOTAL_CREDITS;
+                                localStorage.setItem('gameBoosterTotalCredits', TOTAL_CREDITS);
+                                updateCreditDisplay(TOTAL_CREDITS);
                             }
                         } else {
                             orders = j;
@@ -1821,7 +1887,7 @@
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements}));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements, totalCredits: TOTAL_CREDITS}));
             const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `game_booster_backup_${year}${month}${date}${hours}${minutes}${seconds}.json`); document.body.appendChild(a); a.click(); a.remove();
             showToast('ดาวน์โหลดไฟล์ Backup สำเร็จ', 'success');
         }
@@ -1903,8 +1969,7 @@
                 displayElement.classList.add('text-3xl');
             }
         }
-        const apiData = 93; 
-        updateCreditDisplay(apiData); 
+        updateCreditDisplay(TOTAL_CREDITS); 
     </script>
 </body> 
 </html>
