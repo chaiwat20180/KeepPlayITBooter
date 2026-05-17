@@ -773,7 +773,7 @@
             { value: 'link', text: 'Link', icon: 'fa-solid fa-link', color: 'text-blue-500' },
             { value: 'email', text: 'Email', icon: 'fa-solid fa-envelope', color: 'text-red-500' },
             { value: 'Instagram', text: 'Instagram', icon: 'fa-brands fa-instagram', color: 'text-pink-500' },
-            { value: 'Other', text: 'อื่นๆ', icon: 'fa-solid fa-ellipsis', color: 'text-slate-500' }
+            { value: 'Other', text: 'Other', icon: 'fa-solid fa-ellipsis', color: 'text-slate-500' }
         ];
 
         const CREDIT_LINK_TYPES = [
@@ -952,6 +952,7 @@
         }
         
         const socialLinks = [
+            { name: 'Github', url: 'https://github.com/chaiwat20180', icon: 'fa-brands fa-github', hoverClass: 'hover:bg-[#181717] hover:border-[#181717]', isActive: 1 },
             { name: 'Discord', url: 'https://discord.com/invite/GwQFSkCVUX', icon: 'fa-brands fa-discord', hoverClass: 'hover:bg-[#5865F2] hover:border-[#5865F2]', isActive: 1 },
             { name: 'Youtube', url: 'https://www.youtube.com/@KeepPlayIT', icon: 'fa-brands fa-youtube', hoverClass: 'hover:bg-[#FF0000] hover:border-[#FF0000]', isActive: 1 },
             { name: 'Facebook', url: 'https://facebook.com/kchaiwat24', icon: 'fa-brands fa-facebook-f', hoverClass: 'hover:bg-[#1877F2] hover:border-[#1877F2]', isActive: 1 },
@@ -1157,7 +1158,7 @@
             const completed = o.tasks ? o.tasks.filter(t => t.done).length : 0; const total = o.tasks ? o.tasks.length : 0; const progress = total === 0 ? "0" : Math.round((completed/total)*100);
             
             let statusTh = 'รอดำเนินการ'; if(o.status==='active') statusTh='กำลังดำเนินการ'; if(o.status==='completed') statusTh='เสร็จสิ้น'; if(o.status==='canceled') statusTh='ยกเลิกแล้ว';
-            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ:\n ${o.tasks ? o.tasks.map(t => `- ${t.text}`).join('\n') : 'ไม่มีรายการ'}\n สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
+            const msg = `🎮 สรุปงานจ้าง: ${o.gameName}\n👤 ชื่อลูกค้า: ${o.customerName}\n📊 รายการ:\n${o.tasks ? o.tasks.map(t => `- ${t.text}`).join('\n') : 'ไม่มีรายการ'}\n สถานะงาน: ${statusTh}\n💰 ราคา: ${o.price} บาท\n📅 วันที่: ${o.rank==='super_vvip'?'Lifetime':formatDate(o.startDate)+' - '+formatDate(o.endDate)}\n✨ ความคืบหน้า: ${progress}%\nขอบคุณที่ใช้บริการครับ!`;
             copyToClipboard(msg);
         }
 
@@ -1343,10 +1344,11 @@
                         <div class="p-5 flex-1 flex flex-col gap-4">
                             <div class="flex justify-between text-[13px] text-slate-500">${dateDisplay}${dateBadge}</div>
                             <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner"><div class="progress-bar bg-gradient-to-r from-gaming-accent to-fuchsia-500 h-2 rounded-full relative" style="width: ${progress}%" id="progress-${order.id}"></div></div>
+                            
                             <div class="flex items-center justify-between mt-3">
                                 <span class="text-sm text-slate-500 dark:text-slate-400">รายการงาน (${totalTasks})</span>
-                                <button onclick="checkAllTasks('${order.id}')" class="text-[11px] bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> อัพเดททั้งหมด </button>
-                                <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
+                                <button onclick="checkAllTasks('${order.id}')" class="text-[11px] bg-sky-100 dark:bg-sky-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-200 dark:hover:bg-sky-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-check mr-1"></i> อัพเดททั้งหมด </button>
+                                <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-red-100 dark:bg-red-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-200 dark:hover:bg-red-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
                             </div>
                             <ul class="space-y-2.5 mt-2" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`).join('') : ''}</ul>
                             
@@ -2003,7 +2005,7 @@
             renderSingleOrderTasks(orderId);
             showToast('อัพเดทเครื่องหมายงานทั้งหมดแล้ว', 'success');
         }
-        
+
         function toggleTask(orderId, taskIndex, checkbox) {
             const order = orders.find(o => o.id === orderId);
             if(order && order.tasks && order.tasks[taskIndex]) {
@@ -2160,4 +2162,4 @@
         updateCreditDisplay(TOTAL_CREDITS); 
     </script>
 </body> 
-</html> 
+</html>
