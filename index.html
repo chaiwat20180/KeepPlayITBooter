@@ -1345,6 +1345,7 @@
                             <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner"><div class="progress-bar bg-gradient-to-r from-gaming-accent to-fuchsia-500 h-2 rounded-full relative" style="width: ${progress}%" id="progress-${order.id}"></div></div>
                             <div class="flex items-center justify-between mt-3">
                                 <span class="text-sm text-slate-500 dark:text-slate-400">รายการงาน (${totalTasks})</span>
+                                <button onclick="checkAllTasks('${order.id}')" class="text-[11px] bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> อัพเดททั้งหมด </button>
                                 <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
                             </div>
                             <ul class="space-y-2.5 mt-2" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`).join('') : ''}</ul>
@@ -1994,6 +1995,15 @@
             showToast('ยกเลิกเครื่องหมายงานทั้งหมดแล้ว', 'success');
         }
 
+        function checkAllTasks(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if(!order || !order.tasks || order.tasks.length === 0) return;
+            order.tasks.forEach(task => task.done = true);
+            saveData();
+            renderSingleOrderTasks(orderId);
+            showToast('อัพเดทเครื่องหมายงานทั้งหมดแล้ว', 'success');
+        }
+        
         function toggleTask(orderId, taskIndex, checkbox) {
             const order = orders.find(o => o.id === orderId);
             if(order && order.tasks && order.tasks[taskIndex]) {
