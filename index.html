@@ -477,15 +477,17 @@
                                 <div>
                                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Username / ID</label>
                                     <div class="relative">
-                                        <input type="text" id="username" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-8 text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none font-mono text-sm" placeholder="username">
-                                        <i class="fa-solid fa-user absolute right-3 top-3 text-slate-400 text-xs"></i>
-                                    </div>
+                                        <input type="password" id="username" autocomplete="new-password" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-11 text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none font-mono text-sm" placeholder="username">
+                                        <button type="button" onclick="toggleSensitiveField('username', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-gaming-accent transition"><i class="fa-solid fa-eye"></i></button>
+                                        <i class="fa-solid fa-user absolute right-10 top-3 text-slate-400 text-xs"></i>
+                                        </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Password</label>
                                     <div class="relative">
-                                        <input type="text" id="password" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-8 text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none font-mono text-sm" placeholder="password">
-                                        <i class="fa-solid fa-key absolute right-3 top-3 text-slate-400 text-xs"></i>
+                                        <input type="password" id="password" autocomplete="new-password" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-11 text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none font-mono text-sm" placeholder="password">
+                                        <button type="button" onclick="toggleSensitiveField('password', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-gaming-accent transition"><i class="fa-solid fa-eye"></i></button>
+                                        <i class="fa-solid fa-key absolute right-10 top-3 text-slate-400 text-xs"></i>
                                     </div>
                                 </div>
                             </div>
@@ -745,8 +747,10 @@
         const GAME_LIST = [
             "Genshin Impact", 
             "Honkai: Star Rail", 
+            "Honkai Impact 3",
             "Zenless Zone Zero", 
-            "Wuthering Waves"
+            "Wuthering Waves",
+            "Neverness to Everness (NTE)"
         ];
         
         const DEFAULT_BANNERS = [
@@ -1072,6 +1076,14 @@
             }
         }
 
+        function escapeHtml(value) {
+            return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function escapeJsString(value) {
+            return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+        }
+
         function applyQuickTimeFilter() {
             const val = quickTimeSelect ? quickTimeSelect.getValue() : $('#quickTimeFilter').val();
             const fpStart = document.querySelector('#filterStartDate')._flatpickr;
@@ -1237,7 +1249,7 @@
             
             if(order.tasks && order.tasks.length > 0) {
                 order.tasks.forEach((task, idx) => {
-                    listContainer.append(`<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`);
+                    listContainer.append(`<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${escapeHtml(task.text)}</span></li>`);
                 });
             }
             
@@ -1293,11 +1305,13 @@
                         const info = CONTACT_TYPES.find(t => t.value === c.type) || { icon: 'fa-link', color: 'text-slate-500' };
                         let displayVal = c.value; let href = c.value.startsWith('http') ? c.value : '#'; let target = '_blank';
                         if(c.type === 'tel') { href = `tel:${c.value}`; target = ''; if(c.value.length >= 10) displayVal = c.value.substring(0,3) + '-XXX-' + c.value.substring(c.value.length-4); } else if (c.type === 'line' || c.type === 'discord') { href = '#'; target = ''; if(c.value.length > 4) displayVal = c.value.substring(0,2) + '***' + c.value.substring(c.value.length-2); } else if (c.type === 'facebook' || c.type === 'twitter' || c.type === 'X') { displayVal = 'Link'; }
-                        // ผif(c.type === 'email') { displayVal = c.value.substring(0, c.value.indexOf('@')) + '***'; }
                         if(c.type === 'email') { 
-                            displayVal = c.value.substring(0, 2) + '***' + c.value.substring(c.value.indexOf('@')); 
+                            displayVal = c.value.substring(0, 2) + '***' + c.value.substring(c.value.indexOf('@'));
                         }
-                        contactsHtml += `<div class="flex items-center gap-1 text-xs bg-white dark:bg-[#0f172a] rounded-md border border-gray-200 dark:border-slate-700 pr-1 group/badge transition hover:border-gaming-accent shadow-sm"><a href="${href}" target="${target}" class="flex items-center gap-1.5 pl-2 py-1 ${href==='#'?'cursor-default':''}"><i class="${info.icon} ${info.color}"></i><span class="max-w-[80px] truncate text-slate-600 dark:text-slate-400 group-hover/badge:text-gaming-accent font-medium">${displayVal}</span></a><button onclick="copyToClipboard('${c.value}')" class="text-slate-400 hover:text-emerald-500 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800" title="Copy"><i class="fa-regular fa-copy"></i></button></div>`;
+                        const safeHref = href ? escapeHtml(href) : '#';
+                        const safeDisplayVal = escapeHtml(displayVal);
+                        const safeCopyValue = escapeJsString(c.value);
+                        contactsHtml += `<div class="flex items-center gap-1 text-xs bg-white dark:bg-[#0f172a] rounded-md border border-gray-200 dark:border-slate-700 pr-1 group/badge transition hover:border-gaming-accent shadow-sm"><a href="${safeHref}" target="${target}" class="flex items-center gap-1.5 pl-2 py-1 ${href==='#'?'cursor-default':''}"><i class="${info.icon} ${info.color}"></i><span class="max-w-[80px] truncate text-slate-600 dark:text-slate-400 group-hover/badge:text-gaming-accent font-medium">${safeDisplayVal}</span></a><button onclick="copyToClipboard('${safeCopyValue}')" class="text-slate-400 hover:text-emerald-500 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800" title="Copy"><i class="fa-regular fa-copy"></i></button></div>`;
                     });
                     contactsHtml += '</div>';
                 }
@@ -1320,24 +1334,24 @@
                                     <button onclick="deleteOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
-                            <h3 class="text-xl font-bold text-slate-800 dark:text-white truncate pr-2 ${order.status === 'canceled' ? 'line-through text-slate-400' : ''}">${order.gameName}</h3>
-                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName || '-'}</span></div>${contactsHtml}</div>
+                            <h3 class="text-xl font-bold text-slate-800 dark:text-white truncate pr-2 ${order.status === 'canceled' ? 'line-through text-slate-400' : ''}">${escapeHtml(order.gameName)}</h3>
+                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName ? escapeHtml(order.customerName) : '-'}</span></div>${contactsHtml}</div>
                         </div>
 
                         <div class="px-5 py-4 space-y-2.5 bg-slate-50 dark:bg-[#0b1220]/50 border-b border-gray-100 dark:border-slate-700/50">
                             <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
                                 <div class="flex items-center gap-3 overflow-hidden flex-1">
                                     <i class="fa-solid fa-user text-slate-400 text-xs"></i>
-                                    <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text font-medium" data-value="${order.username}" data-revealed="false">${smartMask(order.username, false)}</span>
+                                    <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text font-medium" data-value="${escapeHtml(order.username)}" data-revealed="false">${smartMask(order.username, false)}</span>
                                 </div>
-                                <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${order.username}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
+                                <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${escapeJsString(order.username)}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
                             </div>
                             <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
                                 <div class="flex items-center gap-3 overflow-hidden flex-1">
                                     <i class="fa-solid fa-key text-slate-400 text-xs"></i>
-                                    <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text masked-dot" data-type="password" data-value="${order.password}" data-revealed="false">${smartMask(order.password, true)}</span>
+                                    <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text masked-dot" data-type="password" data-value="${escapeHtml(order.password)}" data-revealed="false">${smartMask(order.password, true)}</span>
                                 </div>
-                                <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${order.password}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
+                                <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${escapeJsString(order.password)}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
                             </div>
                         </div>
 
@@ -1350,14 +1364,14 @@
                                 <button onclick="checkAllTasks('${order.id}')" class="text-[11px] bg-sky-100 dark:bg-sky-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-200 dark:hover:bg-sky-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-check mr-1"></i> อัพเดททั้งหมด </button>
                                 <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-red-100 dark:bg-red-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-200 dark:hover:bg-red-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
                             </div>
-                            <ul class="space-y-2.5 mt-2" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${task.text}</span></li>`).join('') : ''}</ul>
+                            <ul class="space-y-2.5 mt-2" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${escapeHtml(task.text)}</span></li>`).join('') : ''}</ul>
                             
                             <div class="mt-1 flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:border-gaming-accent transition-colors">
                                 <input type="text" id="newTask-${order.id}" class="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-200 px-2 py-1 focus:outline-none" placeholder="+ เพิ่มงานด่วน..." onkeypress="if(event.key==='Enter') quickAddTask('${order.id}')">
                                 <button onclick="quickAddTask('${order.id}')" class="w-6 h-6 flex justify-center items-center rounded bg-gaming-accent hover:bg-gaming-accent-hover text-white transition shadow-sm"><i class="fa-solid fa-plus text-[10px]"></i></button>
                             </div>
 
-                            ${order.notes ? `<div class="mt-auto pt-3 border-t border-dashed border-gray-200 dark:border-slate-700"><p class="text-[11px] text-amber-600 dark:text-amber-400/80 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-800/30"><i class="fa-solid fa-note-sticky mr-1"></i> ${order.notes}</p></div>` : '<div class="mt-auto"></div>'}
+                            ${order.notes ? `<div class="mt-auto pt-3 border-t border-dashed border-gray-200 dark:border-slate-700"><p class="text-[11px] text-amber-600 dark:text-amber-400/80 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-800/30"><i class="fa-solid fa-note-sticky mr-1"></i> ${escapeHtml(order.notes)}</p></div>` : '<div class="mt-auto"></div>'}
                         </div>
                         <div class="bg-gray-50 dark:bg-[#0b1220]/80 p-3 border-t border-gray-100 dark:border-slate-700/50 text-center">
                             <button onclick="copyReceiptDaily('${order.id}')" class="w-full text-xs font-bold text-gaming-accent hover:text-white bg-indigo-50 hover:bg-gaming-accent dark:bg-indigo-900/20 dark:hover:bg-gaming-accent transition py-2 rounded-md border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
@@ -1720,7 +1734,7 @@
             $('#modalTitle').html('<i class="fa-solid fa-pen-to-square text-gaming-accent"></i> แก้ไขข้อมูลงาน'); $('#orderId').val(order.id);
             
             if(gameSelectModal) { if(GAME_LIST.includes(order.gameName)) { gameSelectModal.setValue(order.gameName); } else { gameSelectModal.setValue('new_game'); $('#customGameInput').val(order.gameName).removeClass('hidden'); } }
-            $('#customerName').val(order.customerName + ' (Copy)'); 
+            $('#customerName').val(order.customerName);
             $('#username').val(order.username); $('#password').val(order.password); $('#price').val(order.price); $('#adminNotes').val(order.notes || '');
             
             const fpStart = document.querySelector('#startDate')._flatpickr; const fpEnd = document.querySelector('#endDate')._flatpickr;
@@ -1736,19 +1750,33 @@
         
         function addContactInput(type = 'facebook', value = '') {
             const id = Date.now() + Math.floor(Math.random() * 10000);
-            const html = `<div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}"><div class="w-1/3"><select id="contactSelect-${id}" name="contactType[]" class="w-full">${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}</select></div><input type="text" value="${value}" name="contactValue[]" class="flex-1 h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร..."><button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
+            const safeValue = escapeHtml(value);
+            const html = `<div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}"><div class="w-1/3"><select id="contactSelect-${id}" name="contactType[]" class="w-full">${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}</select></div><input type="text" value="${safeValue}" name="contactValue[]" class="flex-1 h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร..."><button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
             $('#contactListContainer').append(html); new TomSelect(`#contactSelect-${id}`, window.contactSelectConfig);
         }
         
         function addTaskInput(value = '', done = false) {
             const id = Date.now() + Math.floor(Math.random() * 10000);
-            $('#taskListContainer').append(`<div class="flex gap-2 items-center mb-2" id="task-${id}" data-done="${done}"><input type="text" value="${value}" name="tasks[]" class="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-600 rounded-md px-3 text-sm dark:text-white focus:outline-none focus:border-gaming-accent focus:ring-1 focus:ring-gaming-accent" placeholder="รายละเอียดสิ่งที่ต้องทำ..."><button type="button" onclick="$('#task-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div>`);
+            const safeValue = escapeHtml(value);
+            $('#taskListContainer').append(`<div class="flex gap-2 items-center mb-2" id="task-${id}" data-done="${done}"><input type="text" value="${safeValue}" name="tasks[]" class="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-600 rounded-md px-3 text-sm dark:text-white focus:outline-none focus:border-gaming-accent focus:ring-1 focus:ring-gaming-accent" placeholder="รายละเอียดสิ่งที่ต้องทำ..."><button type="button" onclick="$('#task-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div>`);
         }
 
         function toggleVisibility(btn) {
             const row = $(btn).closest('.border'); const span = row.find('[data-value]').first(); if(!span || span.length === 0) return;
             const full = span.attr('data-value') || ''; const isRevealed = span.attr('data-revealed') === 'true'; const isPassword = span.attr('data-type') === 'password';
             if(isRevealed) { span.text(smartMask(full, isPassword)); span.attr('data-revealed', 'false'); $(btn).find('i').removeClass('fa-eye-slash text-gaming-accent').addClass('fa-eye text-slate-400'); } else { span.text(full); span.attr('data-revealed', 'true'); $(btn).find('i').removeClass('fa-eye text-slate-400').addClass('fa-eye-slash text-gaming-accent'); }
+        }
+
+        function toggleSensitiveField(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            }
         }
 
         function showConfirm(message, icon = 'fa-triangle-exclamation', color = 'rose') {
