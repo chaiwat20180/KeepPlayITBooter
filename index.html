@@ -1557,7 +1557,7 @@
                         if (!duration) return Infinity; 
                         
                         const start = order.staminaStart ? new Date(order.staminaStart).getTime() : Date.now();
-                        return start + (duration * 60000);
+                        return start + (duration * 60000); // เวลาที่พลังงานจะเต็ม (ms)
                     };
                     return getFinishTime(a) - getFinishTime(b);
                 });
@@ -1567,6 +1567,8 @@
 
         function getFilteredOrders() {
             const search = $('#searchInput').val().toLowerCase();
+            const searchInput = $('#searchInput').val().toLowerCase().trim();
+            const searchTerms = searchInput.split(/[\s,]+/).filter(term => term.length > 0);
             const statusCheck = statusFilter ? (statusFilter.getValue() || 'all') : 'all';
             const gameCheck = gameFilter ? gameFilter.getValue() : [];
             const isAllGames = gameCheck.length === 0;
@@ -1574,10 +1576,19 @@
             const endDate = $('#filterEndDate').val();
 
             let result = orders.filter(order => {
-                const matchesSearch = (order.gameName+order.customerName+(order.username||'')).toLowerCase().includes(search);
+                const orderText = (order.gameName + order.customerName + (order.username||'')).toLowerCase();
+                //const matchesSearch = (order.gameName+order.customerName+(order.username||'')).toLowerCase().includes(search);
+                //const matchesStatus = statusCheck === 'all' || order.status === statusCheck;
+                //const matchesGame = isAllGames || gameCheck.includes(order.gameName);
+                const matchesSearch = searchTerms.length === 0 || searchTerms.some(term => orderText.includes(term));
                 const matchesStatus = statusCheck === 'all' || order.status === statusCheck;
                 const matchesGame = isAllGames || gameCheck.includes(order.gameName);
+
+                // let matchesDate = true;
+                // if(startDate && endDate) matchesDate = (new Date(order.startDate) <= new Date(endDate)) && (new Date(order.endDate) >= new Date(startDate));
+                // else if (startDate) matchesDate = new Date(order.startDate) >= new Date(startDate);
                 
+                // return matchesSearch && matchesStatus && matchesGame && matchesDate;
                 let matchesDate = true;
                 if(startDate && endDate) matchesDate = (new Date(order.startDate) <= new Date(endDate)) && (new Date(order.endDate) >= new Date(startDate));
                 else if (startDate) matchesDate = new Date(order.startDate) >= new Date(startDate);
@@ -1585,6 +1596,8 @@
                 return matchesSearch && matchesStatus && matchesGame && matchesDate;
             });
             
+            // const sortVal = document.getElementById('sortOrder') ? document.getElementById('sortOrder').value : 'newest';
+            // return sortOrders(result, sortVal);
             const sortVal = document.getElementById('sortOrder') ? document.getElementById('sortOrder').value : 'newest';
             return sortOrders(result, sortVal);
         }
