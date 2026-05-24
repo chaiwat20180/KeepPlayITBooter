@@ -432,6 +432,7 @@
                             <option value="price_desc">ราคาสูง - ต่ำ</option>
                             <option value="price_asc">ราคาต่ำ - สูง</option>
                             <option value="urgency">ความสำคัญ (Rank)</option>
+                            <option value="stamina_asc">พลังงานใกล้เต็ม</option>
                         </select>
                     </div>
                 </div>
@@ -1548,6 +1549,18 @@
             if(sortBy === 'urgency') {
                 const w = { super_vvip: 5, urgent: 4, vvip: 3, vip: 2, special: 1, none: 0 };
                 list.sort((a,b) => (w[b.rank||'none'] - w[a.rank||'none']));
+            }
+            if(sortBy === 'stamina_asc') {
+                list.sort((a,b) => {
+                    const getFinishTime = (order) => {
+                        const duration = parseInt(order.staminaDurationMinutes, 10) || 0;
+                        if (!duration) return Infinity; 
+                        
+                        const start = order.staminaStart ? new Date(order.staminaStart).getTime() : Date.now();
+                        return start + (duration * 60000);
+                    };
+                    return getFinishTime(a) - getFinishTime(b);
+                });
             }
             return list;
         }
