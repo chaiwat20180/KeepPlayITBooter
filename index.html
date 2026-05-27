@@ -186,13 +186,13 @@
                 
                 <div class="flex items-center gap-2 sm:gap-4">
                     <div class="hidden md:flex gap-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-slate-700">
-                        <button type="button" onclick="exportData()" class="px-3 py-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition text-sm font-medium flex items-center gap-2">
+                        <button type="button" onclick="openExportModal()" class="px-3 py-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition text-sm font-medium flex items-center gap-2">
                             <i class="fa-solid fa-file-export"></i> <span>Backup</span>
                         </button>
-                        <button type="button" onclick="triggerImport()" class="px-3 py-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-sky-500 transition text-sm font-medium flex items-center gap-2">
+                        <button type="button" onclick="openImportModal()" class="px-3 py-1.5 rounded-md hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-sky-500 transition text-sm font-medium flex items-center gap-2">
                             <i class="fa-solid fa-file-import"></i> <span>Restore</span>
                         </button>
-                        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
+                        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importDataFromFile(this)">
                     </div>
 
                     <button type="button" onclick="toggleTheme()" class="w-10 h-10 flex justify-center items-center rounded-full bg-gray-100 text-slate-500 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors shadow-sm">
@@ -841,7 +841,7 @@
     </div>
 
     <div id="toast" class="fixed bottom-6 right-6 transform translate-y-24 opacity-0 transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) z-50">
-        <div class="bg-slate-800 border-l-4 border-gaming-success text-white px-5 py-3.5 rounded-lg shadow-2xl flex items-center gap-3 min-w-[200px]">
+        <div class="bg-slate-800 border-l-4 border-gaming-success text-white px-5 py-3.5 rounded-lg shadow-2xl flex items-center gap-3 min-w-[200px] z-50">
             <i class="fa-solid fa-circle-check text-gaming-success text-lg" id="toastIcon"></i>
             <span id="toastMessage" class="font-medium text-sm">Copied!</span>
         </div>
@@ -870,6 +870,77 @@
                 <div class="mt-6 flex justify-center gap-3 confirm-actions">
                     <button id="confirmCancel" class="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 font-medium w-full transition">ยกเลิก</button>
                     <button id="confirmOk" class="px-5 py-2.5 rounded-lg bg-rose-500 text-white hover:bg-rose-600 font-medium w-full transition shadow-lg shadow-rose-500/30">ตกลง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="exportModal" class="fixed inset-0 hidden overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeExportModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl w-full border border-gray-200 dark:border-slate-700 relative z-50">
+                <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-file-export text-emerald-500 mr-2"></i> Backup Data (ส่งออกข้อมูล)</h3>
+                    <button onclick="closeExportModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6 space-y-5">
+                    <button type="button" onclick="exportDataToFile()" class="w-full flex items-center justify-center gap-2 py-3 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/40 rounded-xl font-bold transition shadow-sm">
+                        <i class="fa-solid fa-download text-lg"></i> ดาวน์โหลดเป็นไฟล์ .json
+                    </button>
+                    <div class="relative flex items-center py-2">
+                        <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
+                        <span class="flex-shrink-0 mx-4 text-slate-400 text-sm font-medium">หรือคัดลอกเป็นโค้ด</span>
+                        <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">โค้ดข้อมูล (JSON Data)</label>
+                            <button type="button" onclick="toggleBlur('exportCodeData', this)" class="text-xs text-slate-500 hover:text-gaming-accent flex items-center gap-1 transition">
+                                <i class="fa-solid fa-eye"></i> <span>แสดงโค้ด</span>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <textarea id="exportCodeData" rows="10" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-mono text-slate-600 dark:text-slate-400 focus:outline-none custom-scrollbar blur-sm select-none transition-all duration-300" readonly></textarea>
+                        </div>
+                    </div>
+                    <button type="button" onclick="copyExportCode()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-copy"></i> คัดลอกโค้ด
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="fixed inset-0 hidden overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeImportModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl w-full border border-gray-200 dark:border-slate-700 relative z-50">
+                <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-file-import text-sky-500 mr-2"></i> Restore Data (นำเข้าข้อมูล)</h3>
+                    <button onclick="closeImportModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6 space-y-5">
+                    <button type="button" onclick="triggerImport()" class="w-full flex items-center justify-center gap-2 py-3 bg-sky-50 text-sky-600 border border-sky-200 hover:bg-sky-100 dark:bg-sky-900/20 dark:border-sky-800 dark:text-sky-400 dark:hover:bg-sky-900/40 rounded-xl font-bold transition shadow-sm">
+                        <i class="fa-solid fa-upload text-lg"></i> อัปโหลดจากไฟล์ .json
+                    </button>
+                    <div class="relative flex items-center py-2">
+                        <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
+                        <span class="flex-shrink-0 mx-4 text-slate-400 text-sm font-medium">หรือนำเข้าด้วยโค้ด</span>
+                        <div class="flex-grow border-t border-gray-200 dark:border-slate-700"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">วางโค้ดข้อมูล (JSON Data) ที่นี่</label>
+                            <button type="button" onclick="toggleBlur('importCodeData', this, 'text-sky-500')" class="text-xs text-slate-500 hover:text-sky-500 flex items-center gap-1 transition">
+                                <i class="fa-solid fa-eye-slash text-sky-500"></i> <span class="text-sky-500">ซ่อนโค้ด</span>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <textarea id="importCodeData" rows="10" class="w-full bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 focus:outline-none custom-scrollbar transition-all duration-300" placeholder='{"orders": [...], ...}'></textarea>
+                        </div>
+                    </div>
+                    <button type="button" onclick="importDataFromCode()" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-lg font-bold transition shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> นำเข้าข้อมูล
+                    </button>
                 </div>
             </div>
         </div>
@@ -2276,7 +2347,128 @@
         function deleteOrder(id) { showConfirm('คุณแน่ใจหรือไม่ว่าต้องการลบงานจ้างนี้?').then(ok=>{ if(!ok) return; orders = orders.filter(o => o.id !== id); saveData(); renderOrders(); renderDashboard(); showToast('ลบออเดอร์เรียบร้อย', 'success'); }); }
         function deleteBanner(id) { showConfirm('ต้องการลบ Banner นี้ใช่หรือไม่?').then(ok=>{ if(!ok) return; banners = banners.filter(b => b.id !== id); saveData(); renderBannerList(); renderBanners(); showToast('ลบ Banner เรียบร้อย', 'success'); }); }
 
-        function importData(input) { 
+        // function importData(input) { 
+        //     const f = input.files[0]; if(!f) return; const r = new FileReader();
+        //     r.onload = (e) => { 
+        //         try { 
+        //             const j = JSON.parse(e.target.result);
+        //             showConfirm('ยืนยันการ Import ข้อมูล?', 'fa-file-import', 'amber').then(ok => {
+        //                 if(!ok) { $(input).val(''); return; }
+        //                 if(j.orders) { 
+        //                     orders = j.orders; 
+        //                     banners = j.banners || banners; 
+        //                     if(j.advertisements) {
+        //                         advertisements = j.advertisements;
+        //                         localStorage.setItem('gameBoosterAds', JSON.stringify(advertisements));
+        //                     }
+        //                     if(j.totalCredits !== undefined) {
+        //                         TOTAL_CREDITS = parseFloat(j.totalCredits) || TOTAL_CREDITS;
+        //                         localStorage.setItem('gameBoosterTotalCredits', TOTAL_CREDITS);
+        //                         updateCreditDisplay(TOTAL_CREDITS);
+        //                     }
+        //                     if(j.creditLinks) {
+        //                         CREDIT_LINKS = j.creditLinks;
+        //                         localStorage.setItem('gameBoosterCreditLinks', JSON.stringify(CREDIT_LINKS));
+        //                     }
+        //                     if(j.staminaSoundSettings) {
+        //                         staminaSoundSettings = j.staminaSoundSettings;
+        //                         localStorage.setItem('staminaSoundSettings', JSON.stringify(staminaSoundSettings));
+        //                         refreshStaminaModalFields();
+        //                     }
+        //                     if(j.emailSettings) {
+        //                         emailSettings = j.emailSettings;
+        //                         localStorage.setItem('gameBoosterEmailSettings', JSON.stringify(emailSettings));
+        //                     }
+        //                     if(typeof refreshStaminaModalFields === 'function') refreshStaminaModalFields();
+        //                 } else {
+        //                     orders = j;
+        //                 }
+        //                 saveData(); initApp(); showToast('Import ข้อมูลสำเร็จ', 'success');
+        //             });
+        //         } catch(err){ showToast('ไฟล์ JSON ไม่ถูกต้อง', 'error'); }
+        //         $(input).val('');
+        //     }; 
+        //     r.readAsText(f); 
+        // }
+        // ==========================================
+        // ระบบ BACKUP / EXPORT (File & Code)
+        // ==========================================
+        
+        function getBackupJSONString() {
+            return JSON.stringify({
+                orders, 
+                banners, 
+                advertisements, 
+                totalCredits: TOTAL_CREDITS, 
+                creditLinks: CREDIT_LINKS, 
+                staminaSoundSettings, 
+                emailSettings
+            });
+        }
+
+        // function openExportModal() {
+        //     $('#exportCodeData').val(getBackupJSONString());
+        //     $('#exportModal').removeClass('hidden');
+        // }
+        function openExportModal() {
+            const el = document.getElementById('exportCodeData');
+            el.value = getBackupJSONString();
+            
+            // รีเซ็ตให้กลับมาเบลอทุกครั้งที่เปิด Modal
+            el.classList.add('blur-sm', 'select-none');
+            
+            $('#exportModal').removeClass('hidden');
+        }
+
+        function closeExportModal() {
+            $('#exportModal').addClass('hidden');
+        }
+
+        function exportDataToFile() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(getBackupJSONString());
+            const a = document.createElement('a'); 
+            a.setAttribute("href", dataStr); 
+            a.setAttribute("download", `game_booster_backup_${year}${month}${date}${hours}${minutes}${seconds}.json`); 
+            document.body.appendChild(a); 
+            a.click(); 
+            a.remove();
+            
+            showToast('ดาวน์โหลดไฟล์ Backup สำเร็จ', 'success');
+            closeExportModal();
+        }
+
+        function copyExportCode() {
+            const code = $('#exportCodeData').val();
+            copyToClipboard(code);
+            closeExportModal();
+        }
+
+        // ==========================================
+        // ระบบ RESTORE / IMPORT (File & Code)
+        // ==========================================
+
+        function openImportModal() {
+            $('#importCodeData').val('');
+            $('#importModal').removeClass('hidden');
+        }
+
+        function closeImportModal() {
+            $('#importModal').addClass('hidden');
+        }
+
+        function triggerImport() { 
+            document.getElementById('importFile').click(); 
+        }
+
+        function importDataFromFile(input) { 
             const f = input.files[0]; if(!f) return; const r = new FileReader();
             r.onload = (e) => { 
                 try { 
@@ -2313,6 +2505,7 @@
                             orders = j;
                         }
                         saveData(); initApp(); showToast('Import ข้อมูลสำเร็จ', 'success');
+                        closeImportModal();
                     });
                 } catch(err){ showToast('ไฟล์ JSON ไม่ถูกต้อง', 'error'); }
                 $(input).val('');
@@ -2320,6 +2513,59 @@
             r.readAsText(f); 
         }
 
+        function importDataFromCode() {
+            const code = $('#importCodeData').val().trim();
+            if(!code) return showToast('กรุณาวางโค้ดก่อนนำเข้า', 'error');
+            processImportJSON(code);
+        }
+
+        // ฟังก์ชันกลางสำหรับจัดการ Data ไม่ว่าจะมาจาก File หรือ Code
+        function processImportJSON(jsonString) {
+            try { 
+                const j = JSON.parse(jsonString);
+                showConfirm('ข้อมูลปัจจุบันจะถูกทับ ยืนยันการ Import ข้อมูล?', 'fa-file-import', 'sky').then(ok => {
+                    if(!ok) return;
+                    
+                    if(j.orders) { 
+                        orders = j.orders; 
+                        banners = j.banners || banners; 
+                        if(j.advertisements) {
+                            advertisements = j.advertisements;
+                            localStorage.setItem('gameBoosterAds', JSON.stringify(advertisements));
+                        }
+                        if(j.totalCredits !== undefined) {
+                            TOTAL_CREDITS = parseFloat(j.totalCredits) || TOTAL_CREDITS;
+                            localStorage.setItem('gameBoosterTotalCredits', TOTAL_CREDITS);
+                            updateCreditDisplay(TOTAL_CREDITS);
+                        }
+                        if(j.creditLinks) {
+                            CREDIT_LINKS = j.creditLinks;
+                            localStorage.setItem('gameBoosterCreditLinks', JSON.stringify(CREDIT_LINKS));
+                        }
+                        if(j.staminaSoundSettings) {
+                            staminaSoundSettings = j.staminaSoundSettings;
+                            localStorage.setItem('staminaSoundSettings', JSON.stringify(staminaSoundSettings));
+                        }
+                        if(j.emailSettings) {
+                            emailSettings = j.emailSettings;
+                            localStorage.setItem('gameBoosterEmailSettings', JSON.stringify(emailSettings));
+                        }
+                        if(typeof refreshStaminaModalFields === 'function') refreshStaminaModalFields();
+                    } else {
+                        // รองรับไฟล์เวอร์ชั่นเก่าที่มีแค่ Array ของ Orders
+                        orders = j;
+                    }
+                    
+                    saveData(); 
+                    initApp(); 
+                    showToast('Import ข้อมูลสำเร็จ', 'success');
+                    closeImportModal();
+                });
+            } catch(err) { 
+                console.error("Import Error:", err);
+                showToast('รูปแบบข้อมูล JSON ไม่ถูกต้อง', 'error'); 
+            }
+        }
         function showToast(msg, type = 'success') { 
             clearTimeout(toastTimeout); $('#toastMessage').text(msg);
             
@@ -2647,20 +2893,20 @@
             exportDataToCSV(multiMonthOrders, `multi_month_report_${Date.now()}.csv`);
         }
 
-        function exportData() {
+        // function exportData() {
 
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const date = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            // const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements, totalCredits: TOTAL_CREDITS, creditLinks: CREDIT_LINKS}));
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements, totalCredits: TOTAL_CREDITS, creditLinks: CREDIT_LINKS, staminaSoundSettings, emailSettings}));
-            const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `game_booster_backup_${year}${month}${date}${hours}${minutes}${seconds}.json`); document.body.appendChild(a); a.click(); a.remove();
-            showToast('ดาวน์โหลดไฟล์ Backup สำเร็จ', 'success');
-        }
+        //     const now = new Date();
+        //     const year = now.getFullYear();
+        //     const month = String(now.getMonth() + 1).padStart(2, '0');
+        //     const date = String(now.getDate()).padStart(2, '0');
+        //     const hours = String(now.getHours()).padStart(2, '0');
+        //     const minutes = String(now.getMinutes()).padStart(2, '0');
+        //     const seconds = String(now.getSeconds()).padStart(2, '0');
+        //     // const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements, totalCredits: TOTAL_CREDITS, creditLinks: CREDIT_LINKS}));
+        //     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({orders, banners, advertisements, totalCredits: TOTAL_CREDITS, creditLinks: CREDIT_LINKS, staminaSoundSettings, emailSettings}));
+        //     const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `game_booster_backup_${year}${month}${date}${hours}${minutes}${seconds}.json`); document.body.appendChild(a); a.click(); a.remove();
+        //     showToast('ดาวน์โหลดไฟล์ Backup สำเร็จ', 'success');
+        // }
 
         function triggerImport() { document.getElementById('importFile').click(); }
         function copyToClipboard(text) { if(!text) return; navigator.clipboard.writeText(text).then(() => { showToast('คัดลอกข้อความแล้ว!', 'success'); }, (err) => { console.error('Could not copy', err); }); }
@@ -2759,6 +3005,31 @@
                     showToast('ยกเลิก Stamina เรียบร้อย', 'success');
                 }
             });
+        }
+        // ฟังก์ชันสำหรับเปิด/ปิด Blur ช่อง Textarea
+        function toggleBlur(elementId, btn, activeColorClass = 'text-gaming-accent') {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            
+            const isBlurred = el.classList.contains('blur-sm');
+            const icon = btn.querySelector('i');
+            const span = btn.querySelector('span');
+            
+            if (isBlurred) {
+                // เอาเบลอออก
+                el.classList.remove('blur-sm');
+                if (el.hasAttribute('readonly')) el.classList.remove('select-none'); // เอา select-none ออกเฉพาะช่องอ่านอย่างเดียว
+                
+                if (icon) icon.className = `fa-solid fa-eye-slash ${activeColorClass}`;
+                if (span) { span.innerText = 'ซ่อนโค้ด'; span.classList.add(activeColorClass); }
+            } else {
+                // ใส่เบลอกลับเข้าไป
+                el.classList.add('blur-sm');
+                if (el.hasAttribute('readonly')) el.classList.add('select-none'); 
+                
+                if (icon) icon.className = 'fa-solid fa-eye text-slate-500';
+                if (span) { span.innerText = 'แสดงโค้ด'; span.classList.remove(activeColorClass); }
+            }
         }
         updateCreditDisplay(TOTAL_CREDITS); 
     </script>
