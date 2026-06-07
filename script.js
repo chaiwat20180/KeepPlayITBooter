@@ -297,9 +297,9 @@
         }
 
         $(document).ready(function() {
-            initTheme(); initTomSelects(); populateGameData(); loadData(); renderCreditLinks();
+            initTheme(); initTomSelects(); populateGameData(); 
             setupSearch(); setupFlatpickr();
-
+            loadData(); renderCreditLinks();
             dashboardVisible = (localStorage.getItem('dashboardVisible') !== 'false');
             if(!dashboardVisible) $('#dashboardSection').hide();
             updateDashboardToggleText();
@@ -347,11 +347,23 @@
         }
 
         function initApp() { 
-            renderOrders(); 
+            // renderOrders(); 
+            // renderBanners(); 
+            // renderBannerList(); 
+            // updateStats(); 
+            // renderDashboard(); 
+            // renderSideAds(); 
+            // renderCreditLinks();
+            if (typeof quickTimeSelect !== 'undefined' && quickTimeSelect) {
+                quickTimeSelect.setValue('this_month', true);
+                applyQuickTimeFilter(); 
+            } else {
+                renderOrders();
+                renderDashboard();
+                updateStats();
+            }
             renderBanners(); 
             renderBannerList(); 
-            updateStats(); 
-            renderDashboard(); 
             renderSideAds(); 
             renderCreditLinks();
         }
