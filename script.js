@@ -94,6 +94,7 @@
 
         let staminaSoundSettings = JSON.parse(localStorage.getItem('staminaSoundSettings')) || { type: 'beep', customUrl: '', volume: 1, enabled: true };
         let emailSettings = JSON.parse(localStorage.getItem('gameBoosterEmailSettings')) || { enabled: false, targetEmail: '', publicKey: '', serviceId: '', templateId: '' };
+        let discordSettings = JSON.parse(localStorage.getItem('gameBoosterDiscordSettings')) || { enabled: false, webhooks: '', discordId: '' };
         if (!staminaSoundSettings.type) staminaSoundSettings.type = 'beep';
         if (staminaSoundSettings.type === 'tts') staminaSoundSettings.type = 'beep';
         if ('ttsPhrase' in staminaSoundSettings) delete staminaSoundSettings.ttsPhrase;
@@ -138,6 +139,50 @@
                 }, function(error) {
                     console.error('❌ ส่งอีเมลไม่สำเร็จ:', error);
                 });
+        }
+
+        function sendDiscordAlert(order) {
+            if (!discordSettings.enabled || !discordSettings.webhooks) return;
+            const urls = discordSettings.webhooks
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(line => line);
+            if (urls.length === 0) return;
+
+            const pingText = discordSettings.discordId ? `<@${discordSettings.discordId}>` : '';
+            const alertTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
+
+            const payload = {
+                content: `🚨 **แจ้งเตือน Stamina เต็ม!** ${pingText}`.trim(),
+                embeds: [{
+                    title: `🎮 คิวงาน: ${order.customerName}`,
+                    description: `เกม: **${order.gameName}**\n\n**รายการที่ต้องทำ:**\n${order.tasks && order.tasks.length > 0 ? order.tasks.map(t => `${t.done ? '✅' : '⏳'} ${t.text}`).join('\n') : 'ไม่มีรายการ'}`,
+                    color: 5814783,
+                    fields: [
+                        { name: 'เวลาที่เต็ม', value: alertTime, inline: true },
+                        { name: 'สถานะ', value: '⚡ พร้อมลุย!', inline: true }
+                    ],
+                    footer: { text: 'KeepPlayIT Master System' }
+                }]
+            };
+
+            if (discordSettings.discordId) {
+                payload.allowed_mentions = { users: [discordSettings.discordId] };
+            }
+
+            urls.forEach(url => {
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(res => {
+                    if (!res.ok) {
+                        return res.text().then(text => { throw new Error(`${res.status} ${text}`); });
+                    }
+                }).catch(err => {
+                    console.error('Discord webhook failed:', url, err);
+                });
+            });
         }
 
         function closeAdModal() {
@@ -298,8 +343,9 @@
 
         $(document).ready(function() {
             initTheme(); initTomSelects(); populateGameData(); 
-            setupSearch(); setupFlatpickr();
+            setupSearch(); setupFlatpickr(); // ย้าย 2 บรรทัดนี้ขึ้นมาก่อน loadData()
             loadData(); renderCreditLinks();
+
             dashboardVisible = (localStorage.getItem('dashboardVisible') !== 'false');
             if(!dashboardVisible) $('#dashboardSection').hide();
             updateDashboardToggleText();
@@ -354,14 +400,17 @@
             // renderDashboard(); 
             // renderSideAds(); 
             // renderCreditLinks();
+            // 1. สั่งให้ตัวกรองทำงานที่ "เดือนนี้" เป็นค่าเริ่มต้น
             if (typeof quickTimeSelect !== 'undefined' && quickTimeSelect) {
                 quickTimeSelect.setValue('this_month', true);
-                applyQuickTimeFilter(); 
+                applyQuickTimeFilter(); // ฟังก์ชันนี้จะจัดการเรียก renderOrders() และ renderDashboard() ให้เอง
             } else {
                 renderOrders();
                 renderDashboard();
                 updateStats();
             }
+
+            // 2. โหลดองค์ประกอบอื่นๆ ตามปกติ
             renderBanners(); 
             renderBannerList(); 
             renderSideAds(); 
@@ -389,6 +438,7 @@
             localStorage.setItem('gameBoosterTotalCredits', TOTAL_CREDITS);
             localStorage.setItem('gameBoosterCreditLinks', JSON.stringify(CREDIT_LINKS));
             localStorage.setItem('staminaSoundSettings', JSON.stringify(staminaSoundSettings));
+            localStorage.setItem('gameBoosterDiscordSettings', JSON.stringify(discordSettings));
             if (typeof API_URL !== 'undefined' && API_URL) {
                 fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ orders, banners }) }).catch(console.error);
             }
@@ -488,50 +538,66 @@
                 if (info && info.expired && order.staminaAlertEnabled && !order.staminaAlerted) {
                     startStaminaAlertLoop();
                     sendStaminaEmailAlert(order);
+                    sendDiscordAlert(order);
                     order.staminaAlerted = true;
                     saveData();
                 }
             });
         }
 
+        function startDefaultStaminaTone(volume) {
+            if (!(window.AudioContext || window.webkitAudioContext)) return false;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            try {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 880;
+                gain.gain.value = Math.min(1, volume * 0.18);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                staminaAlertContext.audioContext = ctx;
+                staminaAlertContext.oscillator = osc;
+                return true;
+            } catch (err) {
+                console.warn('ไม่สามารถเริ่มเสียงแจ้งเตือนได้', err);
+                return false;
+            }
+        }
+
         function startStaminaAlertLoop() {
             if (!staminaSoundSettings.enabled || staminaAlertContext.active) return;
             const volume = Math.max(0.1, Math.min(1, parseFloat(staminaSoundSettings.volume) || 1));
-            staminaAlertContext.active = true;
             $('#staminaAlertBar').removeClass('hidden');
 
             if (staminaSoundSettings.type === 'custom' && staminaSoundSettings.customUrl) {
-                try {
-                    const audio = new Audio(staminaSoundSettings.customUrl);
-                    audio.loop = true;
-                    audio.volume = volume;
-                    audio.play().catch(() => console.warn('ไม่สามารถเล่นเสียงได้'));
+                const audio = new Audio(staminaSoundSettings.customUrl);
+                audio.loop = true;
+                audio.volume = volume;
+                audio.play().then(() => {
+                    staminaAlertContext.active = true;
                     staminaAlertContext.audio = audio;
-                    return;
-                } catch (err) {
-                    console.warn('ไม่สามารถเล่นเสียงจาก URL ได้', err);
-                }
+                }).catch(err => {
+                    console.warn('ไม่สามารถเล่นเสียงจาก URL ได้, fallback เป็นเสียงปกติ', err);
+                    if (audio) {
+                        audio.pause();
+                        audio.src = '';
+                    }
+                    if (!startDefaultStaminaTone(volume)) {
+                        $('#staminaAlertBar').addClass('hidden');
+                    } else {
+                        staminaAlertContext.active = true;
+                    }
+                });
+                return;
             }
 
-            if (window.AudioContext || window.webkitAudioContext) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                try {
-                    const ctx = new AudioContext();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = 880;
-                    gain.gain.value = Math.min(1, volume * 0.25);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start();
-                    staminaAlertContext.audioContext = ctx;
-                    staminaAlertContext.oscillator = osc;
-                } catch (err) {
-                    console.warn('ไม่สามารถเริ่มเสียงแจ้งเตือนได้', err);
-                    staminaAlertContext.active = false;
-                    $('#staminaAlertBar').addClass('hidden');
-                }
+            if (startDefaultStaminaTone(volume)) {
+                staminaAlertContext.active = true;
+            } else {
+                $('#staminaAlertBar').addClass('hidden');
             }
         }
 
@@ -588,18 +654,38 @@
             $('#staminaModal').addClass('hidden');
         }
 
+        // function refreshStaminaModalFields() {
+        //     $('#globalStaminaEnabled').prop('checked', !!staminaSoundSettings.enabled);
+        //     $('#staminaSoundType').val(staminaSoundSettings.type || 'beep');
+        //     $('#staminaCustomUrl').val(staminaSoundSettings.customUrl || '');
+        //     $('#staminaVolume').val(staminaSoundSettings.volume || 1);
+            
+        //     // เพิ่มการดึงค่า Email
+        //     $('#emailAlertEnabled').prop('checked', !!emailSettings.enabled);
+        //     $('#emailTarget').val(emailSettings.targetEmail || '');
+        //     $('#emailPublicKey').val(emailSettings.publicKey || '');
+        //     $('#emailServiceId').val(emailSettings.serviceId || '');
+        //     $('#emailTemplateId').val(emailSettings.templateId || '');
+
+        //     updateStaminaVolumeDisplay();
+        //     handleStaminaSoundTypeChange();
+        // }
         function refreshStaminaModalFields() {
             $('#globalStaminaEnabled').prop('checked', !!staminaSoundSettings.enabled);
             $('#staminaSoundType').val(staminaSoundSettings.type || 'beep');
             $('#staminaCustomUrl').val(staminaSoundSettings.customUrl || '');
             $('#staminaVolume').val(staminaSoundSettings.volume || 1);
             
-            // เพิ่มการดึงค่า Email
             $('#emailAlertEnabled').prop('checked', !!emailSettings.enabled);
             $('#emailTarget').val(emailSettings.targetEmail || '');
             $('#emailPublicKey').val(emailSettings.publicKey || '');
             $('#emailServiceId').val(emailSettings.serviceId || '');
             $('#emailTemplateId').val(emailSettings.templateId || '');
+
+            // 🟢 เพิ่มส่วนของ Discord
+            $('#discordAlertEnabled').prop('checked', !!discordSettings.enabled);
+            $('#discordWebhooks').val(discordSettings.webhooks || '');
+            $('#discordUserId').val(discordSettings.discordId || '');
 
             updateStaminaVolumeDisplay();
             handleStaminaSoundTypeChange();
@@ -610,17 +696,41 @@
             $('#staminaCustomSoundRow').toggleClass('hidden', type !== 'custom');
         }
 
+        // function saveStaminaSettings() {
+        //     staminaSoundSettings.enabled = $('#globalStaminaEnabled').is(':checked');
+        //     staminaSoundSettings.type = $('#staminaSoundType').val();
+        //     staminaSoundSettings.customUrl = $('#staminaCustomUrl').val().trim();
+        //     staminaSoundSettings.volume = parseFloat($('#staminaVolume').val()) || 1;
+        //     emailSettings.enabled = $('#emailAlertEnabled').is(':checked');
+        //     emailSettings.targetEmail = $('#emailTarget').val().trim();
+        //     emailSettings.publicKey = $('#emailPublicKey').val().trim();
+        //     emailSettings.serviceId = $('#emailServiceId').val().trim();
+        //     emailSettings.templateId = $('#emailTemplateId').val().trim();
+        //     localStorage.setItem('gameBoosterEmailSettings', JSON.stringify(emailSettings));
+
+        //     saveData();
+        //     updateStaminaVolumeDisplay();
+        //     $('#staminaSettingsMessage').text('บันทึกการตั้งค่าเรียบร้อย');
+        //     setTimeout(() => { $('#staminaSettingsMessage').text(''); }, 3000);
+        // }
         function saveStaminaSettings() {
             staminaSoundSettings.enabled = $('#globalStaminaEnabled').is(':checked');
             staminaSoundSettings.type = $('#staminaSoundType').val();
             staminaSoundSettings.customUrl = $('#staminaCustomUrl').val().trim();
             staminaSoundSettings.volume = parseFloat($('#staminaVolume').val()) || 1;
+            
             emailSettings.enabled = $('#emailAlertEnabled').is(':checked');
             emailSettings.targetEmail = $('#emailTarget').val().trim();
             emailSettings.publicKey = $('#emailPublicKey').val().trim();
             emailSettings.serviceId = $('#emailServiceId').val().trim();
             emailSettings.templateId = $('#emailTemplateId').val().trim();
             localStorage.setItem('gameBoosterEmailSettings', JSON.stringify(emailSettings));
+
+            // 🟢 เพิ่มส่วนการบันทึก Discord
+            discordSettings.enabled = $('#discordAlertEnabled').is(':checked');
+            discordSettings.webhooks = $('#discordWebhooks').val().trim();
+            discordSettings.discordId = $('#discordUserId').val().trim();
+            localStorage.setItem('gameBoosterDiscordSettings', JSON.stringify(discordSettings));
 
             saveData();
             updateStaminaVolumeDisplay();
@@ -1360,60 +1470,10 @@
         function addContactInput(type = 'facebook', value = '') {
             const id = Date.now() + Math.floor(Math.random() * 10000);
             const safeValue = escapeHtml(value);
-            
-            const html = `
-            <div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}">
-                <div class="w-1/3">
-                    <select id="contactSelect-${id}" name="contactType[]" class="w-full">
-                        ${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}
-                    </select>
-                </div>
-                
-                <div class="relative flex-1">
-                    <input type="password" id="contactValue-${id}" value="${safeValue}" name="contactValue[]" class="w-full h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-10 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร...">
-                    
-                    <button type="button" onclick="toggleSensitiveField('contactValue-${id}', this)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-gaming-accent transition">
-                        <i class="fa-solid fa-eye text-sm"></i>
-                    </button>
-                </div>
-                
-                <button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>`;
-            
-            $('#contactListContainer').append(html); 
-            new TomSelect(`#contactSelect-${id}`, window.contactSelectConfig);
+            const html = `<div class="flex gap-2 items-center mb-2 contact-row" id="contact-${id}"><div class="w-1/3"><select id="contactSelect-${id}" name="contactType[]" class="w-full">${CONTACT_TYPES.map(t => `<option value="${t.value}" ${type===t.value?'selected':''}>${t.text}</option>`).join('')}</select></div><input type="password" value="${safeValue}" name="contactValue[]" class="flex-1 h-[44px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-gaming-accent focus:outline-none" placeholder="URL หรือ เบอร์โทร..."><button type="button" onclick="$('#contact-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
+            $('#contactListContainer').append(html); new TomSelect(`#contactSelect-${id}`, window.contactSelectConfig);
         }
-
-        // function toggleContactVisibility(inputId, btn) {
-        //     const input = document.getElementById(inputId);
-        //     const icon = btn.querySelector('i');
-            
-        //     if (input.type === 'password') {
-        //         input.type = 'text';
-        //         icon.classList.remove('fa-eye');
-        //         icon.classList.add('fa-eye-slash', 'text-gaming-accent');
-        //     } else {
-        //         input.type = 'password';
-        //         icon.classList.remove('fa-eye-slash', 'text-gaming-accent');
-        //         icon.classList.add('fa-eye');
-        //     }
-        // }
-        function toggleSensitiveField(fieldId, btn) {
-            const input = document.getElementById(fieldId);
-            if (!input) return;
-            
-            const isHidden = input.type === 'password';
-            input.type = isHidden ? 'text' : 'password';
-            
-            const icon = btn.querySelector('i');
-            if (icon) {
-                icon.classList.toggle('fa-eye');
-                icon.classList.toggle('fa-eye-slash');
-                icon.classList.toggle('text-gaming-accent', isHidden);
-            }
-        }
+        
         function addTaskInput(value = '', done = false) {
             const id = Date.now() + Math.floor(Math.random() * 10000);
             const safeValue = escapeHtml(value);
@@ -1426,7 +1486,17 @@
             if(isRevealed) { span.text(smartMask(full, isPassword)); span.attr('data-revealed', 'false'); $(btn).find('i').removeClass('fa-eye-slash text-gaming-accent').addClass('fa-eye text-slate-400'); } else { span.text(full); span.attr('data-revealed', 'true'); $(btn).find('i').removeClass('fa-eye text-slate-400').addClass('fa-eye-slash text-gaming-accent'); }
         }
 
-        
+        function toggleSensitiveField(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            }
+        }
 
         function showConfirm(message, icon = 'fa-triangle-exclamation', color = 'rose') {
             return new Promise((resolve) => {
@@ -1493,13 +1563,14 @@
         
         function getBackupJSONString() {
             return JSON.stringify({
-                orders, 
-                banners, 
-                advertisements, 
-                totalCredits: TOTAL_CREDITS, 
-                creditLinks: CREDIT_LINKS, 
-                staminaSoundSettings, 
-                emailSettings
+                orders,
+                banners,
+                advertisements,
+                totalCredits: TOTAL_CREDITS,
+                creditLinks: CREDIT_LINKS,
+                staminaSoundSettings,
+                emailSettings,
+                discordSettings
             });
         }
 
@@ -2126,18 +2197,6 @@
                 
                 if (icon) icon.className = 'fa-solid fa-eye text-slate-500';
                 if (span) { span.innerText = 'แสดงโค้ด'; span.classList.remove(activeColorClass); }
-            }
-        }
-        function toggleMobileSidebar(open) {
-            const sidebar = document.getElementById('mobileSidebar');
-            const overlay = document.getElementById('mobileSidebarOverlay');
-            
-            if (open) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('opacity-0', 'pointer-events-none');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('opacity-0', 'pointer-events-none');
             }
         }
         updateCreditDisplay(TOTAL_CREDITS); 
