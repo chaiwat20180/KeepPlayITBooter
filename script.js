@@ -401,14 +401,11 @@
             // renderSideAds(); 
             // renderCreditLinks();
             // 1. สั่งให้ตัวกรองทำงานที่ "เดือนนี้" เป็นค่าเริ่มต้น
-            if (typeof quickTimeSelect !== 'undefined' && quickTimeSelect) {
-                quickTimeSelect.setValue('this_month', true);
-                applyQuickTimeFilter(); // ฟังก์ชันนี้จะจัดการเรียก renderOrders() และ renderDashboard() ให้เอง
-            } else {
-                renderOrders();
-                renderDashboard();
-                updateStats();
-            }
+            // ไม่ตั้งค่า quickTime เป็น 'this_month' โดยอัตโนมัติ
+            // ให้เริ่มต้นโดยกรองตามสถานะที่กำหนดไว้ (เช่น statusFilter ติดตั้งเป็น 'active' ใน initTomSelects)
+            renderOrders();
+            renderDashboard();
+            updateStats();
 
             // 2. โหลดองค์ประกอบอื่นๆ ตามปกติ
             renderBanners(); 
@@ -689,12 +686,37 @@
 
             updateStaminaVolumeDisplay();
             handleStaminaSoundTypeChange();
+            // เริ่มต้นให้แสดงแท็บ General
+            if(typeof switchStaminaTab === 'function') switchStaminaTab('general');
         }
 
         function handleStaminaSoundTypeChange() {
             const type = $('#staminaSoundType').val();
             $('#staminaCustomSoundRow').toggleClass('hidden', type !== 'custom');
         }
+
+            function switchStaminaTab(tabId) {
+                const tabs = ['general','email','discord'];
+                tabs.forEach(t => {
+                    const panel = document.getElementById('staminaTab-' + t);
+                    const btn = document.getElementById('staminaTabBtn-' + t);
+                    if(panel) panel.classList.add('hidden');
+                    if(btn) {
+                        btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'font-medium');
+                        btn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-500');
+                        btn.style.borderBottom = 'none';
+                    }
+                });
+                const activePanel = document.getElementById('staminaTab-' + tabId);
+                const activeBtn = document.getElementById('staminaTabBtn-' + tabId);
+                if(activePanel) activePanel.classList.remove('hidden');
+                if(activeBtn) {
+                    activeBtn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-500');
+                    activeBtn.classList.add('text-slate-900', 'dark:text-white', 'font-medium');
+                    activeBtn.style.borderBottom = '2px solid #8b5cf6';
+                }
+            }
+
 
         // function saveStaminaSettings() {
         //     staminaSoundSettings.enabled = $('#globalStaminaEnabled').is(':checked');
@@ -741,6 +763,29 @@
         function updateStaminaVolumeDisplay() {
             const volume = Math.max(0.1, Math.min(1, parseFloat($('#staminaVolume').val()) || 1));
             $('#staminaVolumePercent').text(`${Math.round(volume * 100)}%`);
+        }
+
+        // Toggle played state for an order (mark/unmark played) and persist
+        function togglePlayed(id) {
+            const ord = orders.find(o => o.id == id);
+            if(!ord) return;
+            ord.played = !ord.played;
+            saveData();
+            // Re-render lists where needed
+            try { renderOrders(); } catch(e) {}
+            try { renderDashboard(); } catch(e) {}
+            showToast(ord.played ? 'มาร์กว่าเล่นแล้ว' : 'ยกเลิกสถานะเล่นแล้ว', 'success');
+        }
+
+        function resetAllPlayed() {
+            showConfirm('ต้องการรีเซ็ตสถานะ Played ของทุกงานใช่หรือไม่?', 'fa-rotate-left', 'amber').then(ok => {
+                if(!ok) return;
+                orders.forEach(o => { if(o.played) o.played = false; });
+                saveData();
+                try { renderOrders(); } catch(e) {}
+                try { renderDashboard(); } catch(e) {}
+                showToast('รีเซ็ตสถานะ Played ทั้งหมดแล้ว', 'success');
+            });
         }
 
         function escapeHtml(value) {
@@ -1017,9 +1062,9 @@
                 let dateDisplay = rank !== 'super_vvip' ? `<span class="font-medium"><i class="fa-regular fa-calendar mr-1"></i> ${formatDate(order.startDate)} - ${formatDate(order.endDate)}</span>` : `<span class="text-gaming-accent font-bold text-xs"><i class="fa-solid fa-infinity"></i> ไม่จำกัดเวลา</span>`;
 
                 const card = `
-                    <div id="card-${order.id}" class="order-card bg-white dark:bg-gaming-card rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative flex flex-col h-full opacity-${order.status === 'canceled' ? '60' : '100'}">
+                    <div id="card-${order.id}" class="order-card bg-white dark:bg-gaming-card rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative flex flex-col h-full opacity-${order.status === 'canceled' ? '60' : '100'} ${order.played ? ' bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700' : ''}">
                         
-                        <div class="p-5 border-b border-gray-100 dark:border-slate-700/50 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/40 dark:to-transparent relative">
+                        <div class="p-5 border-b border-gray-100 dark:border-slate-700/50 relative ${order.played ? 'bg-emerald-100 dark:bg-emerald-800/30' : 'bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/40 dark:to-transparent'}">
                             <div class="flex justify-between items-start mb-3">
                                 <div class="flex flex-wrap gap-1.5 items-center">
                                     <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${statusClass}">${statusText}</span>
@@ -1028,15 +1073,16 @@
                                 <div class="flex gap-1 shrink-0 ml-2">
                                     <button onclick="quickStatusUpdate('${order.id}', '${order.status==='active'?'completed':'active'}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-${order.status==='active'?'emerald':'amber'}-500 transition" title="Quick Update"><i class="fa-solid fa-${order.status==='active'?'check':'gamepad'}"></i></button>
                                     <button onclick="duplicateOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-gaming-accent transition" title="คัดลอกงานจ้าง"><i class="fa-solid fa-copy"></i></button>
+                                    <button onclick="togglePlayed('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-emerald-500 transition" title="มาร์กว่าเล่นแล้ว/ยกเลิก"><i class="fa-solid fa-circle-check"></i></button>
                                     <button onclick="editOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-500 transition" title="แก้ไขข้อมูล"><i class="fa-solid fa-pen-to-square"></i></button>
                                     <button onclick="deleteOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
                             <h3 class="text-xl font-bold text-slate-800 dark:text-white truncate pr-2 ${order.status === 'canceled' ? 'line-through text-slate-400' : ''}">${escapeHtml(order.gameName)}</h3>
-                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName ? escapeHtml(order.customerName) : '-'}</span></div>${contactsHtml}</div>
+                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName ? escapeHtml(order.customerName) : '-'}</span>${order.played ? '<span class="ml-2 px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded">เล่นแล้ว</span>' : ''}</div>${contactsHtml}</div>
                         </div>
 
-                        <div class="px-5 py-4 space-y-2.5 bg-slate-50 dark:bg-[#0b1220]/50 border-b border-gray-100 dark:border-slate-700/50">
+                        <div class="px-5 py-4 space-y-2.5 bg-slate-50 dark:bg-[#0b1220]/50 border-b border-gray-100 dark:border-slate-700/50 ${order.played ? ' bg-emerald-50 dark:bg-emerald-900/20' : ''}">
                             <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
                                 <div class="flex items-center gap-3 overflow-hidden flex-1">
                                     <i class="fa-solid fa-user text-slate-400 text-xs"></i>
@@ -1044,7 +1090,7 @@
                                 </div>
                                 <div class="flex gap-1"><button onclick="toggleVisibility(this)" class="text-slate-400 hover:text-gaming-accent p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-eye"></i></button><button onclick="copyToClipboard('${escapeJsString(order.username)}')" class="text-slate-400 hover:text-emerald-500 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-copy"></i></button></div>
                             </div>
-                            <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
+                            <div class="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm ${order.played ? ' bg-emerald-50 dark:bg-emerald-900/10' : ''}">
                                 <div class="flex items-center gap-3 overflow-hidden flex-1">
                                     <i class="fa-solid fa-key text-slate-400 text-xs"></i>
                                     <span class="text-sm font-mono text-slate-600 dark:text-slate-300 truncate masked-text masked-dot" data-type="password" data-value="${escapeHtml(order.password)}" data-revealed="false">${smartMask(order.password, true)}</span>
@@ -2115,6 +2161,9 @@
 
             statusFilter = new TomSelect("#filterStatus", { create: false, dropdownParent: 'body' });
             statusFilter.on('change', () => { renderOrders(); renderDashboard(); });
+
+            // ตั้งค่าเริ่มต้นเมื่อเปิดเว็บให้กรองเฉพาะงานที่กำลังเล่น
+            statusFilter.setValue('active');
 
             new TomSelect("#sortOrder", { create: false, dropdownParent: 'body' });
             quickTimeSelect = new TomSelect("#quickTimeFilter", { create: false, dropdownParent: 'body' });
