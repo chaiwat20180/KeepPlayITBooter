@@ -142,14 +142,18 @@
         }
 
         function sendDiscordAlert(order) {
-            if (!discordSettings.enabled || !discordSettings.webhooks) return;
-            const urls = discordSettings.webhooks
+            // Allow per-order overrides: order.discordWebhooks (string with newlines) and order.discordUserId
+            const sourceWebhooks = (order && order.discordWebhooks) ? order.discordWebhooks : discordSettings.webhooks;
+            const sourceUserId = (order && order.discordUserId) ? order.discordUserId : discordSettings.discordId;
+            if (!discordSettings.enabled && !(order && order.discordWebhooks)) return;
+            if (!sourceWebhooks) return;
+            const urls = String(sourceWebhooks)
                 .split(/\r?\n/)
                 .map(line => line.trim())
                 .filter(line => line);
             if (urls.length === 0) return;
 
-            const pingText = discordSettings.discordId ? `<@${discordSettings.discordId}>` : '';
+            const pingText = sourceUserId ? `<@${sourceUserId}>` : '';
             const alertTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
 
             const payload = {
@@ -166,8 +170,8 @@
                 }]
             };
 
-            if (discordSettings.discordId) {
-                payload.allowed_mentions = { users: [discordSettings.discordId] };
+            if (sourceUserId) {
+                payload.allowed_mentions = { users: [sourceUserId] };
             }
 
             urls.forEach(url => {
@@ -1068,7 +1072,6 @@
                             <div class="flex justify-between items-start mb-3">
                                 <div class="flex flex-wrap gap-1.5 items-center">
                                     <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${statusClass}">${statusText}</span>
-                                    ${rankBadge}
                                 </div>
                                 <div class="flex gap-1 shrink-0 ml-2">
                                     <button onclick="quickStatusUpdate('${order.id}', '${order.status==='active'?'completed':'active'}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-${order.status==='active'?'emerald':'amber'}-500 transition" title="Quick Update"><i class="fa-solid fa-${order.status==='active'?'check':'gamepad'}"></i></button>
@@ -1078,8 +1081,13 @@
                                     <button onclick="deleteOrder('${order.id}')" class="w-8 h-8 rounded-full text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
-                            <h3 class="text-xl font-bold text-slate-800 dark:text-white truncate pr-2 ${order.status === 'canceled' ? 'line-through text-slate-400' : ''}">${escapeHtml(order.gameName)}</h3>
-                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName ? escapeHtml(order.customerName) : '-'}</span>${order.played ? '<span class="ml-2 px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded">เล่นแล้ว</span>' : ''}</div>${contactsHtml}</div>
+                            <div class="flex items-start justify-between gap-3">
+                                <h3 class="text-xl font-bold text-slate-800 dark:text-white truncate pr-2 ${order.status === 'canceled' ? 'line-through text-slate-400' : ''}">${escapeHtml(order.gameName)}</h3>
+                                <div class="shrink-0 ml-3">
+                                    ${rankBadge}
+                                </div>
+                            </div>
+                            <div class="mt-1.5"><div class="flex items-center text-sm text-slate-500 dark:text-slate-400"><i class="fa-solid fa-user-tag text-xs mr-2 text-slate-400"></i><span class="truncate max-w-[150px] font-bold text-slate-700 dark:text-slate-300">${order.customerName ? escapeHtml(order.customerName) : '-'}</span>${order.played ? '<span class="ml-2 px-2 py-0.5 text-xs bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 rounded font-semibold border border-emerald-300">เล่นแล้ว</span>' : ''}</div>${contactsHtml}</div>
                         </div>
 
                         <div class="px-5 py-4 space-y-2.5 bg-slate-50 dark:bg-[#0b1220]/50 border-b border-gray-100 dark:border-slate-700/50 ${order.played ? ' bg-emerald-50 dark:bg-emerald-900/20' : ''}">
@@ -1111,8 +1119,10 @@
                             </div>
                             <div class="flex items-center justify-between mt-3">
                                 <span class="text-sm text-slate-500 dark:text-slate-400">รายการงาน (${totalTasks})</span>
-                                <button onclick="checkAllTasks('${order.id}')" class="text-[11px] bg-sky-100 dark:bg-sky-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-200 dark:hover:bg-sky-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-check mr-1"></i> อัพเดททั้งหมด </button>
-                                <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-red-100 dark:bg-red-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-200 dark:hover:bg-red-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="checkAllTasks('${order.id}')" class="text-[11px] bg-sky-100 dark:bg-sky-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-200 dark:hover:bg-sky-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-check mr-1"></i> อัพเดททั้งหมด </button>
+                                    <button onclick="uncheckAllTasks('${order.id}')" class="text-[11px] bg-amber-100 dark:bg-amber-800 border border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-amber-200 dark:hover:bg-amber-700 rounded px-3 py-1 transition shadow-sm"><i class="fa-solid fa-square-minus mr-1"></i> ยกเลิกทั้งหมด</button>
+                                </div>
                             </div>
                             <ul class="space-y-2.5 mt-2" id="tasks-${order.id}">${order.tasks ? order.tasks.map((task, idx) => `<li class="flex items-start gap-2 text-[13px] ${task.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200 font-medium'}"><input type="checkbox" onchange="toggleTask('${order.id}', ${idx}, this)" ${task.done ? 'checked' : ''} class="mt-1 accent-gaming-accent cursor-pointer w-3.5 h-3.5"><span class="break-words w-full task-text">${escapeHtml(task.text)}</span></li>`).join('') : ''}</ul>
                             
@@ -1480,6 +1490,9 @@
 
             $('#modalTitle').html('<i class="fa-solid fa-clipboard-list text-gaming-accent"></i> เพิ่มข้อมูลงานจ้าง'); 
             addTaskInput(); addContactInput();
+            // reset per-order discord overrides
+            $('#orderDiscordWebhooks').val('');
+            $('#orderDiscordUserId').val('');
         }
 
         function editOrder(editId) {
@@ -1509,6 +1522,9 @@
             
             if(order.contacts && order.contacts.length > 0) order.contacts.forEach(c => addContactInput(c.type, c.value)); else addContactInput();
             if(order.tasks && order.tasks.length > 0) order.tasks.forEach(t => addTaskInput(t.text, !!t.done)); else addTaskInput();
+            // per-order discord overrides
+            $('#orderDiscordWebhooks').val(order.discordWebhooks || '');
+            $('#orderDiscordUserId').val(order.discordUserId || '');
         }
 
         function closeModal() { $('#orderModal').addClass('hidden'); }
@@ -1524,6 +1540,15 @@
             const id = Date.now() + Math.floor(Math.random() * 10000);
             const safeValue = escapeHtml(value);
             $('#taskListContainer').append(`<div class="flex gap-2 items-center mb-2" id="task-${id}" data-done="${done}"><input type="text" value="${safeValue}" name="tasks[]" class="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-600 rounded-md px-3 text-sm dark:text-white focus:outline-none focus:border-gaming-accent focus:ring-1 focus:ring-gaming-accent" placeholder="รายละเอียดสิ่งที่ต้องทำ..."><button type="button" onclick="$('#task-${id}').remove()" class="text-slate-400 hover:text-rose-500 w-10 h-10 flex items-center justify-center rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20"><i class="fa-solid fa-trash-can"></i></button></div>`);
+        }
+
+        function deleteAllTaskInputs() {
+            if ($('#taskListContainer').children().length === 0) { showToast('ไม่มีรายการให้ลบ', 'info'); return; }
+            showConfirm('ลบรายการใน modal ทั้งหมดหรือไม่?').then(ok => {
+                if(!ok) return;
+                $('#taskListContainer').empty();
+                showToast('ลบรายการทั้งหมดใน modal แล้ว', 'success');
+            });
         }
 
         function toggleVisibility(btn) {
@@ -1975,6 +2000,8 @@
 
             const contacts = []; $('.contact-row').each(function() { const type = $(this).find('select[name="contactType[]"]').val(); const value = $(this).find('input[name="contactValue[]"]').val(); if(value) contacts.push({ type, value }); });
             const tasks = []; $('#taskListContainer input[name="tasks[]"]').each(function() { const val = $(this).val(); const done = $(this).closest('div').data('done') === true; if(val) tasks.push({ text: val, done: done }); });
+            const orderDiscordWebhooks = $('#orderDiscordWebhooks').val().trim();
+            const orderDiscordUserId = $('#orderDiscordUserId').val().trim();
             const existingOrder = id ? orders.find(o => o.id === id) : null;
             const newOrder = {
                 id: id || ('ord-' + Date.now()),
@@ -1996,6 +2023,8 @@
                 staminaAlertEnabled,
                 staminaAlerted: existingOrder ? existingOrder.staminaAlerted : false
             };
+            if(orderDiscordWebhooks) newOrder.discordWebhooks = orderDiscordWebhooks;
+            if(orderDiscordUserId) newOrder.discordUserId = orderDiscordUserId;
 
             if (newOrder.staminaDurationMinutes > 0 && newOrder.staminaStart && existingOrder && existingOrder.staminaStart !== newOrder.staminaStart) {
                 newOrder.staminaAlerted = false;
@@ -2022,6 +2051,20 @@
             saveData();
             renderSingleOrderTasks(orderId);
             showToast('อัพเดทเครื่องหมายงานทั้งหมดแล้ว', 'success');
+        }
+
+        function deleteAllTasks(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if(!order) return;
+            if(!order.tasks || order.tasks.length === 0) return showToast('ไม่มีงานให้ลบ', 'info');
+            showConfirm('ลบรายการงานทั้งหมดของออเดอร์นี้?').then(ok=>{
+                if(!ok) return;
+                order.tasks = [];
+                saveData();
+                renderSingleOrderTasks(orderId);
+                renderOrders();
+                showToast('ลบรายการงานทั้งหมดเรียบร้อย', 'success');
+            });
         }
 
         function toggleTask(orderId, taskIndex, checkbox) {
