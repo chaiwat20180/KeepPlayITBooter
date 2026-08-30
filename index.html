@@ -424,6 +424,7 @@
                             <option value="canceled">❌ ยกเลิก</option>
                         </select>
                     </div>
+                    <!-- reset button moved below filters -->
                     <div class="lg:col-span-1">
                         <label class="block text-xs font-bold text-gaming-accent mb-1.5 ml-1"><i class="fa-solid fa-sort mr-1"></i>เรียงลำดับ</label>
                         <select id="sortOrder" class="w-full" autocomplete="off" onchange="renderOrders()">
@@ -437,6 +438,12 @@
                     </div>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-3"><i class="fa-solid fa-circle-info mr-1"></i> ตัวกรองนี้จะส่งผลกับการแสดงผลบนหน้าจอ, Dashboard และข้อมูลเมื่อกดส่งออก (Export Report) พร้อมๆ กัน</p>
+            </div>
+
+            <div class="my-4 flex items-center justify-end">
+                <button id="resetPlayedBtn" type="button" onclick="resetAllPlayed()" class="text-sm bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-md border border-rose-600 dark:border-rose-700 transition shadow-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> รีเซ็ตสีทั้งหมด
+                </button>
             </div>
 
             <div id="ordersSection" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10"></div>
@@ -745,38 +752,50 @@
                     </div>
                     <button onclick="closeStaminaModal()" class="w-10 h-10 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="p-6 space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">สถานะการแจ้งเตือน</label>
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" id="globalStaminaEnabled" class="accent-sky-500 w-5 h-5" />
-                            <label for="globalStaminaEnabled" class="text-sm text-slate-700 dark:text-slate-300">เปิดใช้งานเสียงแจ้งเตือน Stamina</label>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <div class="flex gap-2">
+                            <div class="inline-flex rounded-t-lg bg-transparent border-b border-gray-200 dark:border-slate-700">
+                                <button id="staminaTabBtn-general" class="px-4 py-2 -mb-px border-b-2 border-transparent rounded-tl-md rounded-tr-md text-sm font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="switchStaminaTab('general')">ทั่วไป</button>
+                                <button id="staminaTabBtn-email" class="px-4 py-2 -mb-px border-b-2 border-transparent text-sm font-medium bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="switchStaminaTab('email')">Email</button>
+                                <button id="staminaTabBtn-discord" class="px-4 py-2 -mb-px border-b-2 border-transparent text-sm font-medium bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="switchStaminaTab('discord')">Discord</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 gap-4">
+
+                    <div class="bg-white dark:bg-gaming-card border border-gray-200 dark:border-slate-700 rounded-b-lg p-4">
+                    <div id="staminaTab-general">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">วิธีแจ้งเตือน</label>
-                            <select id="staminaSoundType" class="w-full">
-                                <option value="beep">เสียง Beep</option>
-                                <option value="custom">เสียงจาก URL</option>
-                            </select>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">สถานะการแจ้งเตือน</label>
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" id="globalStaminaEnabled" class="accent-sky-500 w-5 h-5" />
+                                <label for="globalStaminaEnabled" class="text-sm text-slate-700 dark:text-slate-300">เปิดใช้งานเสียงแจ้งเตือน Stamina</label>
+                            </div>
                         </div>
-                        <div id="staminaCustomSoundRow" class="hidden">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL เสียงแจ้งเตือน</label>
-                            <input type="url" id="staminaCustomUrl" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition" placeholder="เช่น https://.../alert.mp3">
-                            <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์เสียง MP3 / WAV ที่สามารถเข้าถึงได้จากเบราว์เซอร์</p>
+                        <div class="grid grid-cols-1 gap-4 mt-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">วิธีแจ้งเตือน</label>
+                                <select id="staminaSoundType" class="w-full">
+                                    <option value="beep">เสียง Beep</option>
+                                    <option value="custom">เสียงจาก URL</option>
+                                </select>
+                            </div>
+                            <div id="staminaCustomSoundRow" class="hidden">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL เสียงแจ้งเตือน</label>
+                                <input type="url" id="staminaCustomUrl" class="w-full h-11 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition" placeholder="เช่น https://.../alert.mp3">
+                                <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์เสียง MP3 / WAV ที่สามารถเข้าถึงได้จากเบราว์เซอร์</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">ระดับเสียง <span id="staminaVolumePercent" class="text-slate-400">100%</span></label>
+                                <input type="range" id="staminaVolume" min="0.1" max="1" step="0.1" value="1" class="w-full" />
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">ระดับเสียง <span id="staminaVolumePercent" class="text-slate-400">100%</span></label>
-                            <input type="range" id="staminaVolume" min="0.1" max="1" step="0.1" value="1" class="w-full" />
+                        <div class="flex flex-wrap gap-3 mt-4">
+                            <button type="button" onclick="testStaminaAlertSound()" class="px-5 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition shadow-sm"><i class="fa-solid fa-play mr-2"></i> ทดสอบเสียง</button>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button type="button" onclick="testStaminaAlertSound()" class="px-5 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition shadow-sm"><i class="fa-solid fa-play mr-2"></i> ทดสอบเสียง</button>
-                    </div>
-                    <div class="border-t border-gray-200 dark:border-slate-700 my-4"></div>
-                    
-                    <div>
+
+                    <div id="staminaTab-email" class="hidden">
                         <h4 class="text-md font-bold text-slate-800 dark:text-white mb-3"><i class="fa-solid fa-envelope text-rose-500 mr-2"></i> ตั้งค่าแจ้งเตือนผ่าน Email (EmailJS)</h4>
                         <div class="flex items-center gap-3 mb-4">
                             <input type="checkbox" id="emailAlertEnabled" class="accent-rose-500 w-5 h-5" />
@@ -800,10 +819,9 @@
                                 <input type="text" id="emailTemplateId" class="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-rose-500" placeholder="เช่น template_xxxxx">
                             </div>
                         </div>
-                        <!-- <p class="text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info mr-1"></i> สมัครใช้งานและรับคีย์ฟรีได้ที่ <a href="https://www.emailjs.com/" target="_blank" class="text-blue-500 hover:underline">emailjs.com</a> (ใช้ Template Variables: {{game_name}}, {{customer_name}}, {{to_email}})</p> -->
                     </div>
-                    <div class="border-t border-gray-200 dark:border-slate-700 my-5"></div>
-                    <div>
+
+                    <div id="staminaTab-discord" class="hidden">
                         <h4 class="text-md font-bold text-slate-800 dark:text-white mb-3"><i class="fa-brands fa-discord text-indigo-500 mr-2"></i> ตั้งค่าแจ้งเตือนผ่าน Discord Webhook</h4>
                         <div class="flex items-center gap-3 mb-4">
                             <input type="checkbox" id="discordAlertEnabled" class="accent-indigo-500 w-5 h-5" />
@@ -818,13 +836,16 @@
                                 <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">My Discord ID (สำหรับ Ping)</label>
                                 <input type="text" id="discordUserId" class="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="เช่น 123456789012345678 (เว้นว่างได้ถ้าไม่ต้องการ Ping)">
                             </div>
-                            <div class="sm:col-span-2 flex flex-col items-center mt-2 gap-3">
-                                <button type="button" onclick="saveStaminaSettings()" class="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition shadow-sm">
-                                    <i class="fa-solid fa-floppy-disk mr-2"></i> บันทึกการตั้งค่า
-                                </button>
-                                <span id="staminaSettingsMessage" class="text-sm text-slate-500 dark:text-slate-400 text-center min-h-[20px]"></span>
-                            </div>
                         </div>
+                    </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 dark:border-slate-700 my-5"></div>
+                    <div class="flex justify-end items-center gap-4">
+                        <button type="button" onclick="saveStaminaSettings()" class="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition shadow-sm">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i> บันทึกการตั้งค่า
+                        </button>
+                        <span id="staminaSettingsMessage" class="text-sm text-slate-500 dark:text-slate-400 text-center min-h-[20px]"></span>
                     </div>
                 </div>
             </div>
