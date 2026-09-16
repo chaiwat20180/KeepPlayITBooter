@@ -773,8 +773,31 @@
         function togglePlayed(id) {
             const ord = orders.find(o => o.id == id);
             if(!ord) return;
-            ord.played = !ord.played;
+
+            const wasPlayed = !!ord.played;
+            const nextPlayed = !wasPlayed;
+            ord.played = nextPlayed;
             saveData();
+
+            if (nextPlayed) {
+                const globalWebhook = discordSettings.webhooks || '';
+                const globalUserId = discordSettings.discordId || '';
+                const isEnabled = !!discordSettings.enabled;
+
+                if (isEnabled && globalWebhook.trim()) {
+                    notifyDiscordDailyPlayed(
+                        ord.gameName,
+                        ord.customerName,
+                        ord.username || ord.customerName || 'unknown',
+                        {
+                            enabled: true,
+                            webhooks: globalWebhook,
+                            userId: globalUserId
+                        }
+                    );
+                }
+            }
+
             // Re-render lists where needed
             try { renderOrders(); } catch(e) {}
             try { renderDashboard(); } catch(e) {}
@@ -2289,6 +2312,71 @@
                 
                 if (icon) icon.className = 'fa-solid fa-eye text-slate-500';
                 if (span) { span.innerText = 'แสดงโค้ด'; span.classList.remove(activeColorClass); }
+            }
+        }
+        // 1. ฟังก์ชันสำหรับเซ็นเซอร์ไอดี (เช่น bm***mo)
+        function maskAccountId(id) {
+            if (!id || id.length <= 3) return "***";
+            const firstTwo = id.substring(0, 2);
+            const lastTwo = id.substring(id.length - 2);
+            return `${firstTwo}***${lastTwo}`;
+        }
+
+        // 2. ฟังก์ชันหลักสำหรับส่ง Webhook ไปยัง Discord
+        async function notifyDiscordDailyPlayed(gameName, customerName, accountId, options = {}) {
+            const isDiscordEnabled = options.enabled ?? discordSettings.enabled ?? document.getElementById('discordAlertEnabled')?.checked ?? false;
+            if (!isDiscordEnabled) return;
+
+            const webhookInput = options.webhooks ?? discordSettings.webhooks ?? document.getElementById('discordWebhooks')?.value ?? "";
+            const webhookUrls = String(webhookInput)
+                .split(/\r?\n/)
+                .map(url => url.trim())
+                .filter(url => url !== "");
+
+            if (webhookUrls.length === 0) return;
+
+            const maskedId = maskAccountId(accountId);
+            const pingUserId = options.userId ?? discordSettings.discordId ?? document.getElementById('discordUserId')?.value ?? "";
+            const pingText = pingUserId ? `<@${pingUserId}>` : "";
+
+            const now = new Date();
+            const timeString = now.toLocaleString('th-TH', {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+
+            const gifUrl = "https://media.tenor.com/CWOaaFkLWUAAAAAi/citlali-pillow.gif";
+
+            const payload = {
+                username: "KeepPlayIT Master",
+                avatar_url: "https://i2.wp.com/images.genshin-builds.com/genshin/characters/odette/image.png?strip=all&quality=100",
+                content: `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`.trim(),
+                embeds: [{
+                    title: "✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย",
+                    color: 1083401,
+                    fields: [
+                        { name: "🎮 ชื่อเกม", value: gameName, inline: true },
+                        { name: "👤 ชื่อลูกค้า", value: customerName, inline: true },
+                        { name: "🆔 ไอดี", value: maskedId, inline: false },
+                        { name: "📅 วันที่และเวลา", value: timeString, inline: false },
+                        { name: "📊 สถานะ", value: "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```", inline: false }
+                    ],
+                    image: { url: gifUrl },
+                    footer: { text: "Game Booster Manager Pro System" }
+                }]
+            };
+
+            for (const url of webhookUrls) {
+                try {
+                    await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    console.log("ส่งแจ้งเตือน Discord สำเร็จ:", url);
+                } catch (error) {
+                    console.error("เกิดข้อผิดพลาดในการส่ง Discord Webhook:", error);
+                }
             }
         }
         updateCreditDisplay(TOTAL_CREDITS); 
