@@ -103,12 +103,58 @@
         let isRevenueVisible = false; let currentBanner = 0; let bannerInterval;
         let gameSelectModal, statusSelectModal, gameFilter, statusFilter, bannerTagSelect, quickTimeSelect;
         let staminaAlertContext = { active: false, audio: null, oscillator: null, audioContext: null };
+        let staminaTestSoundContext = {
+            audio: null,
+            oscillator: null,
+            audioContext: null
+        };
         let pendingDiscordUploadOrderId = null;
         let toastTimeout = null; let dashboardChart = null;
         let dashboardVisible = true;
         let currentFilteredMonth = null; 
         let TOTAL_CREDITS = parseFloat(localStorage.getItem('gameBoosterTotalCredits')) || 0;
-        
+        function stopStaminaTestSound() {
+
+        // ==========================================
+        // Stop HTML Audio
+        // ==========================================
+        if (staminaTestSoundContext.audio) {
+
+            try {
+                staminaTestSoundContext.audio.pause();
+                staminaTestSoundContext.audio.currentTime = 0;
+                staminaTestSoundContext.audio.src = '';
+            } catch (err) {}
+
+            staminaTestSoundContext.audio = null;
+        }
+
+
+        // ==========================================
+        // Stop oscillator
+        // ==========================================
+        if (staminaTestSoundContext.oscillator) {
+
+            try {
+                staminaTestSoundContext.oscillator.stop();
+            } catch (err) {}
+
+            staminaTestSoundContext.oscillator = null;
+        }
+
+
+        // ==========================================
+        // Close AudioContext
+        // ==========================================
+        if (staminaTestSoundContext.audioContext) {
+
+            try {
+                staminaTestSoundContext.audioContext.close();
+            } catch (err) {}
+
+            staminaTestSoundContext.audioContext = null;
+        }
+    }
         function sendStaminaEmailAlert(order) {
             if (!emailSettings.enabled || !emailSettings.targetEmail || !emailSettings.publicKey || !emailSettings.serviceId || !emailSettings.templateId) return;
             
@@ -159,63 +205,191 @@
         }
 
         function sendDiscordAlert(order) {
-    // Allow per-order overrides: order.discordWebhooks (string with newlines) and order.discordUserId
-    const sourceWebhooks = (order && order.discordWebhooks) ? order.discordWebhooks : discordSettings.webhooks;
-    const sourceUserId = (order && order.discordUserId) ? order.discordUserId : discordSettings.discordId;
-    if (!discordSettings.enabled && !(order && order.discordWebhooks)) return;
+
+    // ==========================================
+    // Webhook: Order > Global
+    // ==========================================
+    const sourceWebhooks =
+        String(order?.discordWebhooks || '').trim() ||
+        String(discordSettings.webhooks || '').trim();
+
+    if (!discordSettings.enabled && !order?.discordWebhooks) return;
     if (!sourceWebhooks) return;
-    
-    const urls = String(sourceWebhooks)
+
+    const urls = sourceWebhooks
         .split(/\r?\n/)
-        .map(line => line.trim())
-        .filter(line => line);
-    if (urls.length === 0) return;
+        .map(url => url.trim())
+        .filter(Boolean);
 
-    const pingText = sourceUserId ? `<@${sourceUserId}>` : '';
-    const alertTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
+    if (!urls.length) return;
 
-    // 1. ตรวจสอบและดึง URL รูปภาพ (จัดลำดับความสำคัญ: รูปเฉพาะออเดอร์ -> รูปตั้งค่าส่วนกลาง)
-    // หมายเหตุ: สันนิษฐานว่าคุณตั้งชื่อ key ในออเดอร์ว่า order.discordImageUrl
-    const rawImageUrl = (order && order.discordImageUrl) ? order.discordImageUrl : discordSettings.customImageUrl;
-    const finalImageUrl = normalizeDiscordImageUrl(rawImageUrl);
 
-    const baseContent = `🚨 **แจ้งเตือน Stamina เต็ม!** ${pingText}`.trim();
+    // ==========================================
+    // Discord User ID: Order > Global
+    // ==========================================
+    let sourceUserId =
+        String(order?.discordUserId || '').trim() ||
+        String(discordSettings.discordId || '').trim();
+
+    // รองรับกรณี user เผลอกรอก <@123456789>
+    // หรือ <@!123456789>
+    const userIdMatch =
+        sourceUserId.match(/\d{15,25}/);
+
+    sourceUserId =
+        userIdMatch
+            ? userIdMatch[0]
+            : '';
+
+    const pingText =
+        sourceUserId
+            ? `<@${sourceUserId}>`
+            : '';
+
+
+    // ==========================================
+    // Image: Order > Global
+    // ==========================================
+    const rawImageUrl =
+        String(order?.discordImageUrl || '').trim() ||
+        String(discordSettings.customImageUrl || '').trim();
+
+    const finalImageUrl =
+        normalizeDiscordImageUrl(rawImageUrl);
+
+
+    const alertTime =
+        new Date().toLocaleTimeString(
+            'th-TH',
+            {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }
+        ) + ' น.';
+
+
+    // ==========================================
+    // Discord payload
+    // ==========================================
     const payload = {
-        content: baseContent,
-        embeds: [{
-            title: `🎮 คิวงาน: ${order.customerName}`,
-            description: `เกม: **${order.gameName}**\n\n**รายการที่ต้องทำ:**\n${order.tasks && order.tasks.length > 0 ? order.tasks.map(t => `${t.done ? '✅' : '⏳'} ${t.text}`).join('\n') : 'ไม่มีรายการ'}`,
-            color: 5814783,
-            fields: [
-                { name: 'เวลาที่เต็ม', value: alertTime, inline: true },
-                { name: 'สถานะ', value: '⚡ พร้อมลุย!', inline: true }
-            ],
-            footer: { text: 'KeepPlayIT Master System' }
-        }]
+
+        // สำคัญ:
+        // ใส่ mention เป็น text จริงใน content
+        content:
+            pingText
+                ? `🚨 **แจ้งเตือน Stamina เต็ม!** ${pingText}`
+                : `🚨 **แจ้งเตือน Stamina เต็ม!**`,
+
+        embeds: [
+            {
+                title:
+                    `🎮 คิวงาน: ${order.customerName || '-'}`,
+
+                description:
+                    `เกม: **${order.gameName || '-'}**\n\n` +
+                    `**รายการที่ต้องทำ:**\n` +
+                    (
+                        order.tasks?.length
+                            ? order.tasks
+                                .map(
+                                    t =>
+                                        `${t.done ? '✅' : '⏳'} ${t.text}`
+                                )
+                                .join('\n')
+                            : 'ไม่มีรายการ'
+                    ),
+
+                color: 5814783,
+
+                fields: [
+                    {
+                        name: 'เวลาที่เต็ม',
+                        value: alertTime,
+                        inline: true
+                    },
+                    {
+                        name: 'สถานะ',
+                        value: '⚡ พร้อมลุย!',
+                        inline: true
+                    }
+                ],
+
+                footer: {
+                    text: 'KeepPlayIT Master System'
+                }
+            }
+        ]
     };
 
-    // 2. ถ้ารูปภาพผ่านการตรวจสอบ (ไม่เป็นค่าว่าง) ให้ใส่ทั้งในเนื้อหาและ embed เพื่อให้ Discord แสดงภาพร่วมกับข้อความ
+
+    // ==========================================
+    // Image -> Embed only
+    // ==========================================
     if (finalImageUrl) {
-        payload.content = `${baseContent}\n![](${finalImageUrl})`;
-        payload.embeds[0].image = { url: finalImageUrl };
+
+        payload.embeds[0].image = {
+            url: finalImageUrl
+        };
+
     }
 
+
+    // ==========================================
+    // Allow Discord mention
+    // ==========================================
     if (sourceUserId) {
-        payload.allowed_mentions = { users: [sourceUserId] };
+
+        payload.allowed_mentions = {
+            parse: [],
+            users: [sourceUserId]
+        };
+
+    } else {
+
+        payload.allowed_mentions = {
+            parse: []
+        };
+
     }
 
+
+    // ==========================================
+    // Send
+    // ==========================================
     urls.forEach(url => {
+
         fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload)
-        }).then(res => {
+
+        })
+        .then(async res => {
+
             if (!res.ok) {
-                return res.text().then(text => { throw new Error(`${res.status} ${text}`); });
+
+                const text =
+                    await res.text();
+
+                throw new Error(
+                    `${res.status} ${text}`
+                );
             }
-        }).catch(err => {
-            console.error('Discord webhook failed:', url, err);
+
+        })
+        .catch(err => {
+
+            console.error(
+                'Discord webhook failed:',
+                url,
+                err
+            );
+
         });
+
     });
 }
 
@@ -650,29 +824,220 @@
             }
         }
 
+        // function testStaminaAlertSound() {
+        //     if (!staminaSoundSettings.enabled) return;
+        //     const volume = Math.max(0.1, Math.min(1, parseFloat($('#staminaVolume').val()) || 1));
+        //     if ($('#staminaSoundType').val() === 'custom' && $('#staminaCustomUrl').val().trim()) {
+        //         const audio = new Audio($('#staminaCustomUrl').val().trim());
+        //         audio.volume = volume;
+        //         audio.play().catch(() => showToast('ไม่สามารถเล่นเสียงตัวอย่างได้', 'error'));
+        //     } else if (window.AudioContext || window.webkitAudioContext) {
+        //         const AudioContext = window.AudioContext || window.webkitAudioContext;
+        //         const ctx = new AudioContext();
+        //         const osc = ctx.createOscillator();
+        //         const gain = ctx.createGain();
+        //         osc.type = 'sine';
+        //         osc.frequency.value = 880;
+        //         gain.gain.value = Math.min(1, volume * 0.25);
+        //         osc.connect(gain);
+        //         gain.connect(ctx.destination);
+        //         osc.start();
+        //         osc.stop(ctx.currentTime + 0.25);
+        //         osc.onended = () => ctx.close();
+        //     }
+        //     $('#staminaSettingsMessage').text('ทดสอบเสียงสำเร็จ');
+        //     setTimeout(() => { $('#staminaSettingsMessage').text(''); }, 1500);
+        // }
         function testStaminaAlertSound() {
-            if (!staminaSoundSettings.enabled) return;
-            const volume = Math.max(0.1, Math.min(1, parseFloat($('#staminaVolume').val()) || 1));
-            if ($('#staminaSoundType').val() === 'custom' && $('#staminaCustomUrl').val().trim()) {
-                const audio = new Audio($('#staminaCustomUrl').val().trim());
-                audio.volume = volume;
-                audio.play().catch(() => showToast('ไม่สามารถเล่นเสียงตัวอย่างได้', 'error'));
-            } else if (window.AudioContext || window.webkitAudioContext) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                const ctx = new AudioContext();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = 880;
-                gain.gain.value = Math.min(1, volume * 0.25);
+
+            // กด Test ซ้ำ -> หยุดเสียงเก่าก่อนเสมอ
+            stopStaminaTestSound();
+
+
+            if (!staminaSoundSettings.enabled) {
+                return;
+            }
+
+
+            const volume =
+                Math.max(
+                    0.1,
+                    Math.min(
+                        1,
+                        parseFloat(
+                            $('#staminaVolume').val()
+                        ) || 1
+                    )
+                );
+
+
+            const soundType =
+                $('#staminaSoundType').val();
+
+
+            const customUrl =
+                $('#staminaCustomUrl')
+                    .val()
+                    .trim();
+
+
+            // ==========================================
+            // Custom audio
+            // ==========================================
+            if (
+                soundType === 'custom' &&
+                customUrl
+            ) {
+
+                const audio =
+                    new Audio(customUrl);
+
+                audio.volume =
+                    volume;
+
+                staminaTestSoundContext.audio =
+                    audio;
+
+
+                audio.onended = () => {
+
+                    if (
+                        staminaTestSoundContext.audio ===
+                        audio
+                    ) {
+
+                        staminaTestSoundContext.audio =
+                            null;
+
+                    }
+                };
+
+
+                audio.play()
+                    .catch(err => {
+
+                        console.error(
+                            'Test sound failed:',
+                            err
+                        );
+
+                        if (
+                            staminaTestSoundContext.audio ===
+                            audio
+                        ) {
+
+                            staminaTestSoundContext.audio =
+                                null;
+                        }
+
+                        showToast(
+                            'ไม่สามารถเล่นเสียงตัวอย่างได้',
+                            'error'
+                        );
+                    });
+
+            }
+
+
+            // ==========================================
+            // Default beep
+            // ==========================================
+            else if (
+                window.AudioContext ||
+                window.webkitAudioContext
+            ) {
+
+                const AudioContext =
+                    window.AudioContext ||
+                    window.webkitAudioContext;
+
+
+                const ctx =
+                    new AudioContext();
+
+
+                const osc =
+                    ctx.createOscillator();
+
+
+                const gain =
+                    ctx.createGain();
+
+
+                staminaTestSoundContext.audioContext =
+                    ctx;
+
+                staminaTestSoundContext.oscillator =
+                    osc;
+
+
+                osc.type =
+                    'sine';
+
+                osc.frequency.value =
+                    880;
+
+                gain.gain.value =
+                    Math.min(
+                        1,
+                        volume * 0.25
+                    );
+
+
                 osc.connect(gain);
                 gain.connect(ctx.destination);
+
+
                 osc.start();
-                osc.stop(ctx.currentTime + 0.25);
-                osc.onended = () => ctx.close();
+
+
+                // ตัวอย่าง beep สั้น ๆ
+                osc.stop(
+                    ctx.currentTime + 0.25
+                );
+
+
+                osc.onended = () => {
+
+                    if (
+                        staminaTestSoundContext.oscillator ===
+                        osc
+                    ) {
+
+                        staminaTestSoundContext.oscillator =
+                            null;
+                    }
+
+
+                    if (
+                        staminaTestSoundContext.audioContext ===
+                        ctx
+                    ) {
+
+                        staminaTestSoundContext.audioContext =
+                            null;
+                    }
+
+
+                    try {
+                        ctx.close();
+                    } catch (err) {}
+
+                };
+
             }
-            $('#staminaSettingsMessage').text('ทดสอบเสียงสำเร็จ');
-            setTimeout(() => { $('#staminaSettingsMessage').text(''); }, 1500);
+
+
+            $('#staminaSettingsMessage')
+                .text('ทดสอบเสียงสำเร็จ');
+
+
+            setTimeout(() => {
+
+                $('#staminaSettingsMessage')
+                    .text('');
+
+            }, 1500);
         }
 
         function openStaminaModal() {
@@ -681,10 +1046,17 @@
             refreshStaminaModalFields();
         }
 
+        // function closeStaminaModal() {
+        //     $('#staminaModal').addClass('hidden');
+        // }
         function closeStaminaModal() {
-            $('#staminaModal').addClass('hidden');
-        }
 
+            // หยุดเฉพาะเสียง Test
+            stopStaminaTestSound();
+
+            $('#staminaModal')
+                .addClass('hidden');
+        }
         // function refreshStaminaModalFields() {
         //     $('#globalStaminaEnabled').prop('checked', !!staminaSoundSettings.enabled);
         //     $('#staminaSoundType').val(staminaSoundSettings.type || 'beep');
