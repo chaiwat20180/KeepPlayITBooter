@@ -861,7 +861,12 @@
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Imgbb API Key (ใช้สำหรับอัปโหลดรูปภาพไปเว็บ 3rd party)</label>
-                                <input type="text" id="discordImgbbApiKey" class="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="เก็บ API Key จาก imgbb.com">
+                                <div class="flex gap-2 mt-1">
+                                    <input type="password" id="discordImgbbApiKey" class="flex-1 h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="เก็บ API Key จาก imgbb.com">
+                                    <button type="button" id="toggleImgbbKeyBtn" onclick="toggleSensitiveField('discordImgbbApiKey', this)" class="h-10 px-3 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition" title="Show / Hide API Key">
+                                        <i class="fa-solid fa-eye text-slate-500"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">รูปภาพสำหรับ Discord (ถ้าไม่ใส่จะใช้ภาพเริ่มต้น)</label>
