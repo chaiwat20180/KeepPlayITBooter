@@ -2842,7 +2842,7 @@
                 if (span) { span.innerText = 'แสดงโค้ด'; span.classList.remove(activeColorClass); }
             }
         }
-        // 1. ฟังก์ชันสำหรับเซ็นเซอร์ไอดี (เช่น bm***mo)
+        // 1. ฟังก์ชันสำหรับเซ็นเซอร์ไอดี
         function maskAccountId(id) {
             if (!id || id.length <= 3) return "***";
             const firstTwo = id.substring(0, 2);
@@ -2960,7 +2960,7 @@
                     "KeepPlayIT Master",
 
                 avatar_url:
-                    "https://cdn-icons-png.flaticon.com/512/808/808476.png",
+                    "https://c.tenor.com/UimcwxFyHcsAAAAd/tenor.gif",
 
                 content:
                     baseContent,
