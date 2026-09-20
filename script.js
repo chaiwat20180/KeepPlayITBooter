@@ -94,13 +94,16 @@
 
         let staminaSoundSettings = JSON.parse(localStorage.getItem('staminaSoundSettings')) || { type: 'beep', customUrl: '', volume: 1, enabled: true };
         let emailSettings = JSON.parse(localStorage.getItem('gameBoosterEmailSettings')) || { enabled: false, targetEmail: '', publicKey: '', serviceId: '', templateId: '' };
-        let discordSettings = JSON.parse(localStorage.getItem('gameBoosterDiscordSettings')) || { enabled: false, webhooks: '', discordId: '' };
+        let discordSettings = JSON.parse(localStorage.getItem('gameBoosterDiscordSettings')) || { enabled: false, webhooks: '', discordId: '', customImageUrl: '', imgbbApiKey: '' };
+        if (!discordSettings.customImageUrl) discordSettings.customImageUrl = '';
+        if (!discordSettings.imgbbApiKey) discordSettings.imgbbApiKey = '';
         if (!staminaSoundSettings.type) staminaSoundSettings.type = 'beep';
         if (staminaSoundSettings.type === 'tts') staminaSoundSettings.type = 'beep';
         if ('ttsPhrase' in staminaSoundSettings) delete staminaSoundSettings.ttsPhrase;
         let isRevenueVisible = false; let currentBanner = 0; let bannerInterval;
         let gameSelectModal, statusSelectModal, gameFilter, statusFilter, bannerTagSelect, quickTimeSelect;
         let staminaAlertContext = { active: false, audio: null, oscillator: null, audioContext: null };
+        let pendingDiscordUploadOrderId = null;
         let toastTimeout = null; let dashboardChart = null;
         let dashboardVisible = true;
         let currentFilteredMonth = null; 
@@ -141,53 +144,78 @@
                 });
         }
 
-        function sendDiscordAlert(order) {
-            // Allow per-order overrides: order.discordWebhooks (string with newlines) and order.discordUserId
-            const sourceWebhooks = (order && order.discordWebhooks) ? order.discordWebhooks : discordSettings.webhooks;
-            const sourceUserId = (order && order.discordUserId) ? order.discordUserId : discordSettings.discordId;
-            if (!discordSettings.enabled && !(order && order.discordWebhooks)) return;
-            if (!sourceWebhooks) return;
-            const urls = String(sourceWebhooks)
-                .split(/\r?\n/)
-                .map(line => line.trim())
-                .filter(line => line);
-            if (urls.length === 0) return;
+        function normalizeDiscordImageUrl(value) {
+            const normalized = String(value || '').trim();
+            if (!normalized) return '';
+            if (/^(data:|blob:|file:|about:)/i.test(normalized)) return '';
 
-            const pingText = sourceUserId ? `<@${sourceUserId}>` : '';
-            const alertTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
-
-            const payload = {
-                content: `🚨 **แจ้งเตือน Stamina เต็ม!** ${pingText}`.trim(),
-                embeds: [{
-                    title: `🎮 คิวงาน: ${order.customerName}`,
-                    description: `เกม: **${order.gameName}**\n\n**รายการที่ต้องทำ:**\n${order.tasks && order.tasks.length > 0 ? order.tasks.map(t => `${t.done ? '✅' : '⏳'} ${t.text}`).join('\n') : 'ไม่มีรายการ'}`,
-                    color: 5814783,
-                    fields: [
-                        { name: 'เวลาที่เต็ม', value: alertTime, inline: true },
-                        { name: 'สถานะ', value: '⚡ พร้อมลุย!', inline: true }
-                    ],
-                    footer: { text: 'KeepPlayIT Master System' }
-                }]
-            };
-
-            if (sourceUserId) {
-                payload.allowed_mentions = { users: [sourceUserId] };
+            try {
+                const parsed = new URL(normalized);
+                if (!['http:', 'https:'].includes(parsed.protocol.toLowerCase())) return '';
+                return parsed.href;
+            } catch (error) {
+                return '';
             }
-
-            urls.forEach(url => {
-                fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(res => {
-                    if (!res.ok) {
-                        return res.text().then(text => { throw new Error(`${res.status} ${text}`); });
-                    }
-                }).catch(err => {
-                    console.error('Discord webhook failed:', url, err);
-                });
-            });
         }
+
+        function sendDiscordAlert(order) {
+    // Allow per-order overrides: order.discordWebhooks (string with newlines) and order.discordUserId
+    const sourceWebhooks = (order && order.discordWebhooks) ? order.discordWebhooks : discordSettings.webhooks;
+    const sourceUserId = (order && order.discordUserId) ? order.discordUserId : discordSettings.discordId;
+    if (!discordSettings.enabled && !(order && order.discordWebhooks)) return;
+    if (!sourceWebhooks) return;
+    
+    const urls = String(sourceWebhooks)
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line);
+    if (urls.length === 0) return;
+
+    const pingText = sourceUserId ? `<@${sourceUserId}>` : '';
+    const alertTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
+
+    // 1. ตรวจสอบและดึง URL รูปภาพ (จัดลำดับความสำคัญ: รูปเฉพาะออเดอร์ -> รูปตั้งค่าส่วนกลาง)
+    // หมายเหตุ: สันนิษฐานว่าคุณตั้งชื่อ key ในออเดอร์ว่า order.discordImageUrl
+    const rawImageUrl = (order && order.discordImageUrl) ? order.discordImageUrl : discordSettings.customImageUrl;
+    const finalImageUrl = normalizeDiscordImageUrl(rawImageUrl);
+
+    const payload = {
+        content: `🚨 **แจ้งเตือน Stamina เต็ม!** ${pingText}`.trim(),
+        embeds: [{
+            title: `🎮 คิวงาน: ${order.customerName}`,
+            description: `เกม: **${order.gameName}**\n\n**รายการที่ต้องทำ:**\n${order.tasks && order.tasks.length > 0 ? order.tasks.map(t => `${t.done ? '✅' : '⏳'} ${t.text}`).join('\n') : 'ไม่มีรายการ'}`,
+            color: 5814783,
+            fields: [
+                { name: 'เวลาที่เต็ม', value: alertTime, inline: true },
+                { name: 'สถานะ', value: '⚡ พร้อมลุย!', inline: true }
+            ],
+            footer: { text: 'KeepPlayIT Master System' }
+        }]
+    };
+
+    // 2. ถ้ารูปภาพผ่านการตรวจสอบ (ไม่เป็นค่าว่าง) ให้ใส่เข้าไปใน embeds
+    if (finalImageUrl) {
+        payload.embeds[0].image = { url: finalImageUrl };
+    }
+
+    if (sourceUserId) {
+        payload.allowed_mentions = { users: [sourceUserId] };
+    }
+
+    urls.forEach(url => {
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => { throw new Error(`${res.status} ${text}`); });
+            }
+        }).catch(err => {
+            console.error('Discord webhook failed:', url, err);
+        });
+    });
+}
 
         function closeAdModal() {
             $('#adModal').addClass('hidden');
@@ -683,14 +711,21 @@
             $('#emailServiceId').val(emailSettings.serviceId || '');
             $('#emailTemplateId').val(emailSettings.templateId || '');
 
-            // 🟢 เพิ่มส่วนของ Discord
             $('#discordAlertEnabled').prop('checked', !!discordSettings.enabled);
             $('#discordWebhooks').val(discordSettings.webhooks || '');
             $('#discordUserId').val(discordSettings.discordId || '');
+            $('#discordCustomImageUrl').val(discordSettings.customImageUrl || '');
+            $('#discordImgbbApiKey').val(discordSettings.imgbbApiKey || '');
+            const preview = $('#discordImagePreview');
+            const imageUrl = discordSettings.customImageUrl || '';
+            if (imageUrl) {
+                preview.attr('src', imageUrl).removeClass('hidden');
+            } else {
+                preview.addClass('hidden').removeAttr('src');
+            }
 
             updateStaminaVolumeDisplay();
             handleStaminaSoundTypeChange();
-            // เริ่มต้นให้แสดงแท็บ General
             if(typeof switchStaminaTab === 'function') switchStaminaTab('general');
         }
 
@@ -752,16 +787,44 @@
             emailSettings.templateId = $('#emailTemplateId').val().trim();
             localStorage.setItem('gameBoosterEmailSettings', JSON.stringify(emailSettings));
 
-            // 🟢 เพิ่มส่วนการบันทึก Discord
             discordSettings.enabled = $('#discordAlertEnabled').is(':checked');
             discordSettings.webhooks = $('#discordWebhooks').val().trim();
             discordSettings.discordId = $('#discordUserId').val().trim();
+            discordSettings.customImageUrl = $('#discordCustomImageUrl').val().trim();
+            discordSettings.imgbbApiKey = $('#discordImgbbApiKey').val().trim();
             localStorage.setItem('gameBoosterDiscordSettings', JSON.stringify(discordSettings));
 
             saveData();
             updateStaminaVolumeDisplay();
             $('#staminaSettingsMessage').text('บันทึกการตั้งค่าเรียบร้อย');
             setTimeout(() => { $('#staminaSettingsMessage').text(''); }, 3000);
+        }
+
+        async function handleDiscordImageUpload(input) {
+            const file = input && input.files && input.files[0];
+            if (!file) return;
+
+            try {
+                const uploadedUrl = await uploadDiscordImageToThirdParty(file);
+                discordSettings.customImageUrl = uploadedUrl;
+                $('#discordCustomImageUrl').val(uploadedUrl);
+                $('#discordImagePreview').attr('src', uploadedUrl).removeClass('hidden');
+                $('#staminaSettingsMessage').text('อัปโหลดรูปภาพสำหรับ Discord แล้ว');
+                setTimeout(() => { $('#staminaSettingsMessage').text(''); }, 2000);
+                localStorage.setItem('gameBoosterDiscordSettings', JSON.stringify(discordSettings));
+            } catch (error) {
+                console.error('Failed to upload Discord custom image:', error);
+                $('#staminaSettingsMessage').text('ไม่สามารถอัปโหลดรูปภาพได้ กรุณาใส่ API Key หรือ URL รูปภาพเอง');
+                setTimeout(() => { $('#staminaSettingsMessage').text(''); }, 3000);
+            }
+            input.value = '';
+        }
+
+        function clearDiscordCustomImage() {
+            discordSettings.customImageUrl = '';
+            $('#discordCustomImageUrl').val('');
+            $('#discordImagePreview').addClass('hidden').removeAttr('src');
+            localStorage.setItem('gameBoosterDiscordSettings', JSON.stringify(discordSettings));
         }
 
         function updateStaminaVolumeDisplay() {
@@ -785,16 +848,17 @@
                 const isEnabled = !!discordSettings.enabled;
 
                 if (isEnabled && globalWebhook.trim()) {
-                    notifyDiscordDailyPlayed(
-                        ord.gameName,
-                        ord.customerName,
-                        ord.username || ord.customerName || 'unknown',
-                        {
-                            enabled: true,
-                            webhooks: globalWebhook,
-                            userId: globalUserId
-                        }
-                    );
+                    pendingDiscordUploadOrderId = ord.id;
+                    $('#discordUploadOrderTitle').text(`${ord.customerName} - ${ord.gameName}`);
+                    $('#discordUploadModal').removeClass('hidden');
+                    $('#discordUploadPreview').addClass('hidden').removeAttr('src');
+                    $('#discordUploadInput').val('');
+                    $('#discordUploadPreviewWrap').addClass('hidden');
+                    setDiscordUploadStatus('เลือกภาพหรือกดส่งทันที หากไม่เลือกจะใช้ภาพเริ่มต้น', 'info');
+                    try { renderOrders(); } catch(e) {}
+                    try { renderDashboard(); } catch(e) {}
+                    showToast(ord.played ? 'มาร์กว่าเล่นแล้ว' : 'ยกเลิกสถานะเล่นแล้ว', 'success');
+                    return;
                 }
             }
 
@@ -803,6 +867,175 @@
             try { renderDashboard(); } catch(e) {}
             showToast(ord.played ? 'มาร์กว่าเล่นแล้ว' : 'ยกเลิกสถานะเล่นแล้ว', 'success');
         }
+
+        function setDiscordUploadStatus(message, type = 'info') {
+            const statusEl = document.getElementById('discordUploadStatus');
+            if (!statusEl) return;
+
+            const palette = {
+                info: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300',
+                success: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300',
+                error: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300'
+            };
+
+            statusEl.textContent = message;
+            statusEl.className = `mt-3 rounded-lg border px-3 py-2 text-xs ${palette[type] || palette.info}`;
+            statusEl.classList.remove('hidden');
+        }
+
+        function closeDiscordUploadModal() {
+            $('#discordUploadModal').addClass('hidden');
+            pendingDiscordUploadOrderId = null;
+            $('#discordUploadInput').val('');
+            $('#discordUploadPreview').addClass('hidden').removeAttr('src');
+            $('#discordUploadPreviewWrap').addClass('hidden');
+            const statusEl = document.getElementById('discordUploadStatus');
+            if (statusEl) {
+                statusEl.textContent = '';
+                statusEl.className = 'hidden mt-3 rounded-lg border px-3 py-2 text-xs';
+            }
+            try { renderOrders(); } catch (e) {}
+            try { renderDashboard(); } catch (e) {}
+        }
+
+        function handleDiscordUploadPreview(input) {
+            const file = input && input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const result = event.target && event.target.result ? event.target.result : '';
+                $('#discordUploadPreview').attr('src', result).removeClass('hidden');
+                $('#discordUploadPreviewWrap').removeClass('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadDiscordImageToThirdParty(file) {
+            if (!file) return '';
+
+            const apiKey = (discordSettings.imgbbApiKey || '').trim();
+            if (!apiKey) {
+                throw new Error('MISSING_IMGBB_KEY');
+            }
+
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const result = event.target && event.target.result ? event.target.result : '';
+                    resolve(result.split(',')[1] || '');
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            const formData = new FormData();
+            formData.append('key', apiKey);
+            formData.append('image', base64);
+
+            const response = await fetch('https://api.imgbb.com/1/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const json = await response.json();
+            if (!response.ok || !json || !json.data) {
+                throw new Error(json && json.error ? json.error.message : 'UPLOAD_FAILED');
+            }
+
+            // Prefer a direct image URL suitable for Discord embeds.
+            // imgbb returns several fields; use `display_url` or `image.url` when available.
+            const imgUrl = (json.data.display_url && String(json.data.display_url).trim())
+                || (json.data.image && json.data.image.url && String(json.data.image.url).trim())
+                || (json.data.url && String(json.data.url).trim());
+
+            if (!imgUrl) throw new Error('UPLOAD_NO_IMAGE_URL');
+
+            return imgUrl;
+        }
+
+        async function sendDiscordAfterUpload() {
+        const fileInput = document.getElementById('discordUploadInput');
+        const file = fileInput && fileInput.files && fileInput.files[0];
+        const order = orders.find(o => o.id == pendingDiscordUploadOrderId);
+        
+        if (!order) {
+            closeDiscordUploadModal();
+            return;
+        }
+
+        const globalWebhook = discordSettings.webhooks || '';
+        const globalUserId = discordSettings.discordId || '';
+
+        if (!globalWebhook.trim()) {
+            closeDiscordUploadModal();
+            showToast('ยังไม่มี Discord Webhook ที่ถูกตั้งค่า', 'error');
+            return;
+        }
+
+        try {
+            let remoteImageUrl = '';
+            
+            if (file) {
+                // 1. ถ้ามีการอัปโหลดรูปใหม่
+                setDiscordUploadStatus('กำลังอัปโหลดรูปภาพไป Imgbb.com...', 'info');
+                remoteImageUrl = normalizeDiscordImageUrl(await uploadDiscordImageToThirdParty(file));
+                
+                if (!remoteImageUrl) {
+                    throw new Error('NO_PUBLIC_IMAGE_URL');
+                }
+                
+                // บันทึกรูปลงใน Order เฉพาะกิจ
+                order.discordImageUrl = remoteImageUrl;
+                saveData();
+                
+                setDiscordUploadStatus('อัปโหลดรูปภาพเสร็จแล้ว กำลังส่งไป Discord...', 'success');
+            } else {
+                // 2. ถ้าไม่ได้อัปโหลดรูปใหม่ ให้ล้างค่ารูปเฉพาะของออเดอร์นี้ออกทิ้งซะ 
+                // เพื่อให้มันไม่ไปจำรูปเก่า และยอมวิ่งไปใช้ค่า Global แทน
+                order.discordImageUrl = ''; 
+                saveData();
+                
+                setDiscordUploadStatus('กำลังส่งข้อความไป Discord (ใช้รูปตั้งค่า Global)...', 'info');
+            }
+
+            // จัดลำดับความสำคัญใหม่:
+            // ถ้าอัปโหลดรูปใหม่ -> ใช้รูปลงอัปโหลดใหม่
+            // ถ้าไม่อัปโหลด -> ข้ามรูปเก่าใน order ไปใช้ค่า Global (discordSettings.customImageUrl) ทันที!
+            const finalImageUrl = normalizeDiscordImageUrl(
+                remoteImageUrl || discordSettings.customImageUrl || ''
+            ) || 'https://media1.tenor.com/m/YwGq3QkP2s8AAAAd/check-mark-button-joypixels.gif';
+            
+            console.log('[Discord final image URL]', finalImageUrl);
+
+            await notifyDiscordDailyPlayed(
+                order.gameName,
+                order.customerName,
+                order.username || order.customerName || 'unknown',
+                {
+                    enabled: true,
+                    webhooks: globalWebhook,
+                    userId: globalUserId,
+                    customImageUrl: finalImageUrl
+                }
+            );
+
+            closeDiscordUploadModal();
+            try { renderOrders(); } catch (e) {}
+            try { renderDashboard(); } catch (e) {}
+            showToast(file ? 'ส่ง Discord พร้อมรูปภาพเรียบร้อย' : 'ส่ง Discord ด้วยรูปตั้งค่า Global เรียบร้อย', 'success');
+            
+        } catch (error) {
+            console.error('Discord upload/send failed:', error);
+            setDiscordUploadStatus(error && error.message === 'MISSING_IMGBB_KEY'
+                ? 'กรุณาใส่ Imgbb API Key ก่อนอัปโหลดรูปภาพ'
+                : 'อัปโหลดหรือส่งข้อความล้มเหลว กรุณาลองใหม่', 'error');
+            if (error && error.message === 'MISSING_IMGBB_KEY') {
+                showToast('กรุณาใส่ Imgbb API Key ในตั้งค่า Discord ก่อนอัปโหลดรูปภาพ', 'error');
+            } else {
+                showToast('อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่หรือใช้ URL ภาพ', 'error');
+            }
+        }
+    }
 
         function resetAllPlayed() {
             showConfirm('ต้องการรีเซ็ตสถานะ Played ของทุกงานใช่หรือไม่?', 'fa-rotate-left', 'amber').then(ok => {
@@ -1516,6 +1749,7 @@
             // reset per-order discord overrides
             $('#orderDiscordWebhooks').val('');
             $('#orderDiscordUserId').val('');
+            $('#orderDiscordImageUrl').val('');
         }
 
         function editOrder(editId) {
@@ -1548,6 +1782,7 @@
             // per-order discord overrides
             $('#orderDiscordWebhooks').val(order.discordWebhooks || '');
             $('#orderDiscordUserId').val(order.discordUserId || '');
+            $('#orderDiscordImageUrl').val(order.discordImageUrl || '');
         }
 
         function closeModal() { $('#orderModal').addClass('hidden'); }
@@ -2025,6 +2260,7 @@
             const tasks = []; $('#taskListContainer input[name="tasks[]"]').each(function() { const val = $(this).val(); const done = $(this).closest('div').data('done') === true; if(val) tasks.push({ text: val, done: done }); });
             const orderDiscordWebhooks = $('#orderDiscordWebhooks').val().trim();
             const orderDiscordUserId = $('#orderDiscordUserId').val().trim();
+            const orderDiscordImageUrl = $('#orderDiscordImageUrl').val().trim();
             const existingOrder = id ? orders.find(o => o.id === id) : null;
             const newOrder = {
                 id: id || ('ord-' + Date.now()),
@@ -2048,6 +2284,7 @@
             };
             if(orderDiscordWebhooks) newOrder.discordWebhooks = orderDiscordWebhooks;
             if(orderDiscordUserId) newOrder.discordUserId = orderDiscordUserId;
+            if(orderDiscordImageUrl) newOrder.discordImageUrl = orderDiscordImageUrl;
 
             if (newOrder.staminaDurationMinutes > 0 && newOrder.staminaStart && existingOrder && existingOrder.staminaStart !== newOrder.staminaStart) {
                 newOrder.staminaAlerted = false;
@@ -2328,7 +2565,9 @@
             if (!isDiscordEnabled) return;
 
             const webhookInput = options.webhooks ?? discordSettings.webhooks ?? document.getElementById('discordWebhooks')?.value ?? "";
+            
             const webhookUrls = String(webhookInput)
+                .replace(/ptb\.discord\.com/g, 'discord.com')
                 .split(/\r?\n/)
                 .map(url => url.trim())
                 .filter(url => url !== "");
@@ -2338,6 +2577,14 @@
             const maskedId = maskAccountId(accountId);
             const pingUserId = options.userId ?? discordSettings.discordId ?? document.getElementById('discordUserId')?.value ?? "";
             const pingText = pingUserId ? `<@${pingUserId}>` : "";
+            
+            const rawImageUrl = options.customImageUrl || discordSettings.customImageUrl || '';
+            let imageUrl = normalizeDiscordImageUrl(rawImageUrl) || "https://media1.tenor.com/m/YwGq3QkP2s8AAAAd/check-mark-button-joypixels.gif";
+            imageUrl = String(imageUrl).trim();
+
+            // ⏱️ เพิ่มการหน่วงเวลา (Delay) 3 วินาที เพื่อให้ลิงก์รูปภาพพร้อมใช้งานและให้ Discord Bot เตรียมพร้อม
+            console.log('[Discord] กำลังรอให้รูปภาพพร้อมใช้งานสักครู่...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             const now = new Date();
             const timeString = now.toLocaleString('th-TH', {
@@ -2345,35 +2592,42 @@
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
 
-            const gifUrl = "https://media.tenor.com/CWOaaFkLWUAAAAAi/citlali-pillow.gif";
-
             const payload = {
                 username: "KeepPlayIT Master",
-                avatar_url: "https://i2.wp.com/images.genshin-builds.com/genshin/characters/odette/image.png?strip=all&quality=100",
+                avatar_url: "https://cdn-icons-png.flaticon.com/512/808/808476.png",
                 content: `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`.trim(),
                 embeds: [{
                     title: "✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย",
                     color: 1083401,
                     fields: [
-                        { name: "🎮 ชื่อเกม", value: gameName, inline: true },
-                        { name: "👤 ชื่อลูกค้า", value: customerName, inline: true },
-                        { name: "🆔 ไอดี", value: maskedId, inline: false },
+                        { name: "🎮 ชื่อเกม", value: gameName || "-", inline: true },
+                        { name: "👤 ชื่อลูกค้า", value: customerName || "-", inline: true },
+                        { name: "🆔 ไอดี", value: maskedId || "-", inline: false },
                         { name: "📅 วันที่และเวลา", value: timeString, inline: false },
                         { name: "📊 สถานะ", value: "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```", inline: false }
                     ],
-                    image: { url: gifUrl },
                     footer: { text: "Game Booster Manager Pro System" }
                 }]
             };
 
+            if (imageUrl && imageUrl.startsWith('http')) {
+                payload.embeds[0].image = { url: imageUrl };
+            }
+
             for (const url of webhookUrls) {
                 try {
-                    await fetch(url, {
+                    const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    console.log("ส่งแจ้งเตือน Discord สำเร็จ:", url);
+                    
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        console.error(`[DISCORD API ERROR] HTTP Status: ${response.status}`, errText);
+                    } else {
+                        console.log("ส่งแจ้งเตือน Discord สำเร็จ:", url);
+                    }
                 } catch (error) {
                     console.error("เกิดข้อผิดพลาดในการส่ง Discord Webhook:", error);
                 }
