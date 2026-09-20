@@ -649,6 +649,10 @@
                                     <label class="text-xs text-slate-500 dark:text-slate-400 mb-1">Discord User ID (สำหรับ Ping)</label>
                                     <input type="text" id="orderDiscordUserId" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white" placeholder="เช่น 123456789012345678">
                                 </div>
+                                <div>
+                                    <label class="text-xs text-slate-500 dark:text-slate-400 mb-1">Custom image for this order only</label>
+                                    <input type="url" id="orderDiscordImageUrl" class="w-full h-10 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white" placeholder="https://.../image.gif (เว้นว่าง = ใช้ค่า Global)">
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -855,6 +859,20 @@
                                 <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">My Discord ID (สำหรับ Ping)</label>
                                 <input type="text" id="discordUserId" class="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="เช่น 123456789012345678 (เว้นว่างได้ถ้าไม่ต้องการ Ping)">
                             </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Imgbb API Key (ใช้สำหรับอัปโหลดรูปภาพไปเว็บ 3rd party)</label>
+                                <input type="text" id="discordImgbbApiKey" class="w-full h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="เก็บ API Key จาก imgbb.com">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">รูปภาพสำหรับ Discord (ถ้าไม่ใส่จะใช้ภาพเริ่มต้น)</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="discordCustomImageUrl" class="flex-1 h-10 bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500" placeholder="https://.../image.gif">
+                                    <button type="button" onclick="document.getElementById('discordImageUpload').click()" class="px-3 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium">อัปโหลด</button>
+                                    <button type="button" onclick="clearDiscordCustomImage()" class="px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium">ล้าง</button>
+                                </div>
+                                <input type="file" id="discordImageUpload" accept="image/*" class="hidden" onchange="handleDiscordImageUpload(this)">
+                                <img id="discordImagePreview" class="hidden w-full h-28 object-contain bg-slate-50 dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 mt-3 p-2" alt="discord preview">
+                            </div>
                         </div>
                     </div>
                     </div>
@@ -866,6 +884,35 @@
                         </button>
                         <span id="staminaSettingsMessage" class="text-sm text-slate-500 dark:text-slate-400 text-center min-h-[20px]"></span>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="discordUploadModal" class="fixed inset-0 hidden overflow-y-auto z-[60]" aria-labelledby="discord-upload-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 transition-opacity backdrop-blur-sm" onclick="closeDiscordUploadModal()"></div>
+            <div class="inline-block align-bottom bg-white dark:bg-gaming-card rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border border-gray-200 dark:border-slate-700 relative z-50">
+                <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                    <h3 id="discord-upload-title" class="text-lg font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-image text-indigo-500 mr-2"></i> อัปโหลดภาพ Discord</h3>
+                    <button onclick="closeDiscordUploadModal()" class="w-8 h-8 flex justify-center items-center rounded-full bg-gray-200 dark:bg-slate-700 text-slate-500 hover:bg-rose-500 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div>
+                        <p class="text-sm text-slate-600 dark:text-slate-300">สำหรับงาน: <span id="discordUploadOrderTitle" class="font-semibold text-slate-900 dark:text-white"></span></p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">เลือกรูปภาพสำหรับส่ง Discord</label>
+                        <input id="discordUploadInput" type="file" accept="image/*" onchange="handleDiscordUploadPreview(this)" class="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-500 file:text-white file:font-medium file:hover:bg-indigo-600">
+                    </div>
+                    <div id="discordUploadPreviewWrap" class="hidden rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-2">
+                        <img id="discordUploadPreview" class="w-full h-40 object-contain bg-slate-50 dark:bg-slate-900 rounded-lg p-2" alt="preview" />
+                    </div>
+                    <div id="discordUploadStatus" class="hidden mt-3 rounded-lg border px-3 py-2 text-xs"></div>
+                </div>
+                <div class="p-4 border-t border-gray-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end gap-3">
+                    <button type="button" onclick="closeDiscordUploadModal()" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium transition">ยกเลิก</button>
+                    <button type="button" onclick="sendDiscordAfterUpload()" class="px-5 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-bold transition shadow-sm">ส่งทันที</button>
                 </div>
             </div>
         </div>
