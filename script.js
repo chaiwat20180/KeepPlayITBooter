@@ -2634,4 +2634,3 @@
             }
         }
         updateCreditDisplay(TOTAL_CREDITS); 
- 
