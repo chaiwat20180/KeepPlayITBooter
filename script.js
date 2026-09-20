@@ -1123,11 +1123,11 @@
             }
 
 
-            // Save image for this Order
-            order.discordImageUrl =
-                imageUrl;
+            // // Save image for this Order
+            // order.discordImageUrl =
+            //     imageUrl;
 
-            saveData();
+            // saveData();
 
 
             console.log(
@@ -1152,14 +1152,13 @@
 
             // Order image first
             imageUrl =
-                normalizeDiscordImageUrl(
-                    order.discordImageUrl || ''
-                );
+            normalizeDiscordImageUrl(
+                order.discordImageUrl || ''
+            );
 
 
             // Fallback Global
             if (!imageUrl) {
-
                 imageUrl =
                     normalizeDiscordImageUrl(
                         discordSettings.customImageUrl || ''
@@ -1229,34 +1228,15 @@
         // ==========================================
 
         await notifyDiscordDailyPlayed(
-
             order.gameName,
-
             order.customerName,
-
-            order.username ||
-                order.customerName ||
-                'unknown',
-
+            order.username || 'unknown',
             {
-
                 enabled: true,
-
-                // Order Webhook > Global
-                webhooks:
-                    webhookUrl,
-
-                // Order User ID > Global
-                userId:
-                    userId,
-
-                // Order Image > Global
-                customImageUrl:
-                    imageUrl,
-
-                // Real uploaded file
-                imageFile:
-                    file || null
+                webhooks: webhookUrl,
+                userId: userId,
+                customImageUrl: imageUrl,
+                imageFile: file || null
             }
         );
 
@@ -2872,358 +2852,358 @@
 
         // 2. ฟังก์ชันหลักสำหรับส่ง Webhook ไปยัง Discord
         async function notifyDiscordDailyPlayed(
-    gameName,
-    customerName,
-    accountId,
-    options = {}
-) {
-    const isDiscordEnabled =
-        options.enabled ??
-        discordSettings.enabled ??
-        document.getElementById('discordAlertEnabled')?.checked ??
-        false;
+                gameName,
+                customerName,
+                accountId,
+                options = {}
+            ) {
+            const isDiscordEnabled =
+                options.enabled ??
+                discordSettings.enabled ??
+                document.getElementById('discordAlertEnabled')?.checked ??
+                false;
 
-    if (!isDiscordEnabled) return;
+            if (!isDiscordEnabled) return;
 
-    // ==========================================
-    // Webhook
-    // ==========================================
+            // ==========================================
+            // Webhook
+            // ==========================================
 
-    const webhookInput =
-        options.webhooks ??
-        discordSettings.webhooks ??
-        document.getElementById('discordWebhooks')?.value ??
-        '';
+            const webhookInput =
+                options.webhooks ??
+                discordSettings.webhooks ??
+                document.getElementById('discordWebhooks')?.value ??
+                '';
 
-    const webhookUrls = String(webhookInput)
-        .replace(/ptb\.discord\.com/g, 'discord.com')
-        .split(/\r?\n/)
-        .map(url => url.trim())
-        .filter(url => url !== '');
+            const webhookUrls = String(webhookInput)
+                .replace(/ptb\.discord\.com/g, 'discord.com')
+                .split(/\r?\n/)
+                .map(url => url.trim())
+                .filter(url => url !== '');
 
-    if (webhookUrls.length === 0) {
-        return;
-    }
-
-    // ==========================================
-    // User ID
-    // ==========================================
-
-    const maskedId =
-        maskAccountId(accountId);
-
-    const pingUserId =
-        options.userId ??
-        discordSettings.discordId ??
-        document.getElementById('discordUserId')?.value ??
-        '';
-
-    const pingText =
-        pingUserId
-            ? `<@${pingUserId}>`
-            : '';
-
-    // ==========================================
-    // Image
-    //
-    // options.customImageUrl จะถูกส่งมาจาก
-    // Order > Global
-    // ==========================================
-
-    const rawImageUrl =
-        options.customImageUrl ??
-        discordSettings.customImageUrl ??
-        '';
-
-    const imageUrl =
-        normalizeDiscordImageUrl(
-            rawImageUrl
-        );
-
-    // ==========================================
-    // Real image file
-    // ==========================================
-
-    const imageFile =
-        options.imageFile &&
-        typeof File !== 'undefined' &&
-        options.imageFile instanceof File
-            ? options.imageFile
-            : null;
-
-    const now = new Date();
-
-    const timeString =
-        now.toLocaleString(
-            'th-TH',
-            {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
+            if (webhookUrls.length === 0) {
+                return;
             }
-        );
 
-    // ==========================================
-    // Discord Payload
-    // ==========================================
+            // ==========================================
+            // User ID
+            // ==========================================
 
-    const baseContent =
-        `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`
-            .trim();
+            const maskedId =
+                maskAccountId(accountId);
 
-    const payload = {
+            const pingUserId =
+                options.userId ??
+                discordSettings.discordId ??
+                document.getElementById('discordUserId')?.value ??
+                '';
 
-        username:
-            "KeepPlayIT Master",
+            const pingText =
+                pingUserId
+                    ? `<@${pingUserId}>`
+                    : '';
 
-        avatar_url:
-            "https://cdn-icons-png.flaticon.com/512/808/808476.png",
+            // ==========================================
+            // Image
+            //
+            // options.customImageUrl จะถูกส่งมาจาก
+            // Order > Global
+            // ==========================================
 
-        content:
-            baseContent,
+            const rawImageUrl =
+                options.customImageUrl ??
+                discordSettings.customImageUrl ??
+                '';
 
-        embeds: [
-            {
-                title:
-                    "✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย",
+            const imageUrl =
+                normalizeDiscordImageUrl(
+                    rawImageUrl
+                );
 
-                color:
-                    1083401,
+            // ==========================================
+            // Real image file
+            // ==========================================
 
-                fields: [
+            const imageFile =
+                options.imageFile &&
+                typeof File !== 'undefined' &&
+                options.imageFile instanceof File
+                    ? options.imageFile
+                    : null;
 
+            const now = new Date();
+
+            const timeString =
+                now.toLocaleString(
+                    'th-TH',
                     {
-                        name: "🎮 ชื่อเกม",
-                        value: gameName || "-",
-                        inline: true
-                    },
-
-                    {
-                        name: "👤 ชื่อลูกค้า",
-                        value: customerName || "-",
-                        inline: true
-                    },
-
-                    {
-                        name: "🆔 ไอดี",
-                        value: maskedId || "-",
-                        inline: false
-                    },
-
-                    {
-                        name: "📅 วันที่และเวลา",
-                        value: timeString,
-                        inline: false
-                    },
-
-                    {
-                        name: "📊 สถานะ",
-                        value:
-                            "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```",
-                        inline: false
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
                     }
-                ],
-
-                footer: {
-                    text:
-                        "Game Booster Manager Pro System"
-                }
-            }
-        ]
-    };
-
-    // ==========================================
-    // Mention permission
-    // ==========================================
-
-    if (pingUserId) {
-
-        payload.allowed_mentions = {
-            users: [
-                String(pingUserId)
-            ]
-        };
-
-    } else {
-
-        payload.allowed_mentions = {
-            parse: []
-        };
-    }
-
-    // ==========================================
-    // IMAGE
-    // ==========================================
-
-    let uploadFile = null;
-
-    // ------------------------------------------
-    // มี File ใหม่
-    // ------------------------------------------
-
-    if (imageFile) {
-
-        let filename =
-            String(
-                imageFile.name ||
-                'discord-image.jpg'
-            )
-            .replace(
-                /[^\w.\-]/g,
-                '_'
-            )
-            .replace(
-                /^_+/,
-                ''
-            );
-
-        if (!filename) {
-            filename =
-                'discord-image.jpg';
-        }
-
-        // ให้ Embed อ้างอิง attachment
-        payload.embeds[0].image = {
-            url:
-                `attachment://${filename}`
-        };
-
-        payload.attachments = [
-            {
-                id: 0,
-                filename: filename
-            }
-        ];
-
-        uploadFile = {
-            file: imageFile,
-            filename: filename
-        };
-
-        console.log(
-            '[Discord] Using attachment:',
-            filename
-        );
-    }
-
-    // ------------------------------------------
-    // ไม่มี File ใหม่
-    // ใช้ Order URL / Global URL
-    // ------------------------------------------
-
-    else if (imageUrl) {
-
-        payload.embeds[0].image = {
-            url: imageUrl
-        };
-
-        console.log(
-            '[Discord] Using image URL:',
-            imageUrl
-        );
-    }
-
-    // ==========================================
-    // SEND
-    // ==========================================
-
-    for (const url of webhookUrls) {
-
-        try {
-
-            let response;
-
-            // ==================================
-            // ส่ง File จริง
-            // ==================================
-
-            if (uploadFile) {
-
-                const formData =
-                    new FormData();
-
-                formData.append(
-                    'payload_json',
-                    JSON.stringify(payload)
                 );
 
-                formData.append(
-                    'files[0]',
-                    uploadFile.file,
-                    uploadFile.filename
-                );
+            // ==========================================
+            // Discord Payload
+            // ==========================================
 
-                response =
-                    await fetch(
-                        url,
-                        {
-                            method: 'POST',
-                            body: formData
-                        }
-                    );
-            }
+            const baseContent =
+                `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`
+                    .trim();
 
-            // ==================================
-            // ส่ง JSON + Image URL
-            // ==================================
+            const payload = {
 
-            else {
+                username:
+                    "KeepPlayIT Master",
 
-                response =
-                    await fetch(
-                        url,
-                        {
-                            method: 'POST',
+                avatar_url:
+                    "https://cdn-icons-png.flaticon.com/512/808/808476.png",
 
-                            headers: {
-                                'Content-Type':
-                                    'application/json'
+                content:
+                    baseContent,
+
+                embeds: [
+                    {
+                        title:
+                            "✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย",
+
+                        color:
+                            1083401,
+
+                        fields: [
+
+                            {
+                                name: "🎮 ชื่อเกม",
+                                value: gameName || "-",
+                                inline: true
                             },
 
-                            body:
-                                JSON.stringify(payload)
+                            {
+                                name: "👤 ชื่อลูกค้า",
+                                value: customerName || "-",
+                                inline: true
+                            },
+
+                            {
+                                name: "🆔 ไอดี",
+                                value: maskedId || "-",
+                                inline: false
+                            },
+
+                            {
+                                name: "📅 วันที่และเวลา",
+                                value: timeString,
+                                inline: false
+                            },
+
+                            {
+                                name: "📊 สถานะ",
+                                value:
+                                    "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```",
+                                inline: false
+                            }
+                        ],
+
+                        footer: {
+                            text:
+                                "Game Booster Manager Pro System"
                         }
+                    }
+                ]
+            };
+
+            // ==========================================
+            // Mention permission
+            // ==========================================
+
+            if (pingUserId) {
+
+                payload.allowed_mentions = {
+                    users: [
+                        String(pingUserId)
+                    ]
+                };
+
+            } else {
+
+                payload.allowed_mentions = {
+                    parse: []
+                };
+            }
+
+            // ==========================================
+            // IMAGE
+            // ==========================================
+
+            let uploadFile = null;
+
+            // ------------------------------------------
+            // มี File ใหม่
+            // ------------------------------------------
+
+            if (imageFile) {
+
+                let filename =
+                    String(
+                        imageFile.name ||
+                        'discord-image.jpg'
+                    )
+                    .replace(
+                        /[^\w.\-]/g,
+                        '_'
+                    )
+                    .replace(
+                        /^_+/,
+                        ''
                     );
+
+                if (!filename) {
+                    filename =
+                        'discord-image.jpg';
+                }
+
+                // ให้ Embed อ้างอิง attachment
+                payload.embeds[0].image = {
+                    url:
+                        `attachment://${filename}`
+                };
+
+                payload.attachments = [
+                    {
+                        id: 0,
+                        filename: filename
+                    }
+                ];
+
+                uploadFile = {
+                    file: imageFile,
+                    filename: filename
+                };
+
+                console.log(
+                    '[Discord] Using attachment:',
+                    filename
+                );
             }
 
-            // ==================================
-            // Error
-            // ==================================
+            // ------------------------------------------
+            // ไม่มี File ใหม่
+            // ใช้ Order URL / Global URL
+            // ------------------------------------------
 
-            if (!response.ok) {
+            else if (imageUrl) {
 
-                const errText =
-                    await response.text();
+                payload.embeds[0].image = {
+                    url: imageUrl
+                };
 
-                console.error(
-                    `[DISCORD API ERROR] HTTP Status: ${response.status}`,
-                    errText
-                );
-
-                throw new Error(
-                    `Discord webhook failed: ${response.status} ${errText}`
+                console.log(
+                    '[Discord] Using image URL:',
+                    imageUrl
                 );
             }
 
-            console.log(
-                uploadFile
-                    ? 'ส่ง Discord พร้อมไฟล์สำเร็จ'
-                    : 'ส่ง Discord พร้อม Image URL สำเร็จ',
-                url
-            );
+            // ==========================================
+            // SEND
+            // ==========================================
 
-        } catch (error) {
+            for (const url of webhookUrls) {
 
-            console.error(
-                'เกิดข้อผิดพลาดในการส่ง Discord:',
-                error
-            );
+                try {
 
-            throw error;
+                    let response;
+
+                    // ==================================
+                    // ส่ง File จริง
+                    // ==================================
+
+                    if (uploadFile) {
+
+                        const formData =
+                            new FormData();
+
+                        formData.append(
+                            'payload_json',
+                            JSON.stringify(payload)
+                        );
+
+                        formData.append(
+                            'files[0]',
+                            uploadFile.file,
+                            uploadFile.filename
+                        );
+
+                        response =
+                            await fetch(
+                                url,
+                                {
+                                    method: 'POST',
+                                    body: formData
+                                }
+                            );
+                    }
+
+                    // ==================================
+                    // ส่ง JSON + Image URL
+                    // ==================================
+
+                    else {
+
+                        response =
+                            await fetch(
+                                url,
+                                {
+                                    method: 'POST',
+
+                                    headers: {
+                                        'Content-Type':
+                                            'application/json'
+                                    },
+
+                                    body:
+                                        JSON.stringify(payload)
+                                }
+                            );
+                    }
+
+                    // ==================================
+                    // Error
+                    // ==================================
+
+                    if (!response.ok) {
+
+                        const errText =
+                            await response.text();
+
+                        console.error(
+                            `[DISCORD API ERROR] HTTP Status: ${response.status}`,
+                            errText
+                        );
+
+                        throw new Error(
+                            `Discord webhook failed: ${response.status} ${errText}`
+                        );
+                    }
+
+                    console.log(
+                        uploadFile
+                            ? 'ส่ง Discord พร้อมไฟล์สำเร็จ'
+                            : 'ส่ง Discord พร้อม Image URL สำเร็จ',
+                        url
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        'เกิดข้อผิดพลาดในการส่ง Discord:',
+                        error
+                    );
+
+                    throw error;
+                }
+            }
         }
-    }
-}
         updateCreditDisplay(TOTAL_CREDITS); 
