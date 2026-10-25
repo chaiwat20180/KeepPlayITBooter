@@ -1348,6 +1348,7 @@
             $('#discordUploadModal').addClass('hidden');
             pendingDiscordUploadOrderId = null;
             $('#discordUploadInput').val('');
+            $('#discordUploadDetail').val('');
             $('#discordUploadPreview').addClass('hidden').removeAttr('src');
             $('#discordUploadPreviewWrap').addClass('hidden');
             const statusEl = document.getElementById('discordUploadStatus');
@@ -1557,7 +1558,10 @@
         let discordUploadSending = false;
 
         async function sendDiscordAfterUpload() {
-
+     const discordDetail =
+            String(
+                document.getElementById('discordUploadDetail')?.value || ''
+            ).trim();
     // ==========================================
     // Prevent duplicate send
     // ==========================================
@@ -1853,7 +1857,10 @@
                 // IMPORTANT:
                 // ไม่ส่ง file ซ้ำไป Discord
                 imageFile:
-                    null
+                    null,
+                
+                detail:
+                    discordDetail
             }
         );
 
@@ -3707,10 +3714,53 @@
             // ==========================================
             // Discord Payload
             // ==========================================
+            
 
             const baseContent =
                 `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`
                     .trim();
+
+            const embedFields = [
+                {
+                    name: "🎮 ชื่อเกม",
+                    value: gameName || "-",
+                    inline: true
+                },
+
+                {
+                    name: "👤 ชื่อลูกค้า",
+                    value: customerName || "-",
+                    inline: true
+                },
+
+                {
+                    name: "🆔 ไอดี",
+                    value: maskedId || "-",
+                    inline: false
+                },
+
+                {
+                    name: "📅 วันที่และเวลา",
+                    value: timeString,
+                    inline: false
+                },
+
+                {
+                    name: "📊 สถานะ",
+                    value:
+                        "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```",
+                    inline: false
+                }
+            ];
+
+            if (additionalDetail) {
+
+                embedFields.push({
+                    name: "📝 รายละเอียดที่ทำไป",
+                    value: additionalDetail,
+                    inline: false
+                });
+            }
 
             const payload = {
 
@@ -3718,7 +3768,7 @@
                     "KeepPlayIT Master",
 
                 avatar_url:
-                    "https://c.tenor.com/UimcwxFyHcsAAAAd/tenor.gif",
+                    "https://cdn-icons-png.flaticon.com/512/808/808476.png",
 
                 content:
                     baseContent,
@@ -3731,39 +3781,8 @@
                         color:
                             1083401,
 
-                        fields: [
-
-                            {
-                                name: "🎮 ชื่อเกม",
-                                value: gameName || "-",
-                                inline: true
-                            },
-
-                            {
-                                name: "👤 ชื่อลูกค้า",
-                                value: customerName || "-",
-                                inline: true
-                            },
-
-                            {
-                                name: "🆔 ไอดี",
-                                value: maskedId || "-",
-                                inline: false
-                            },
-
-                            {
-                                name: "📅 วันที่และเวลา",
-                                value: timeString,
-                                inline: false
-                            },
-
-                            {
-                                name: "📊 สถานะ",
-                                value:
-                                    "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```",
-                                inline: false
-                            }
-                        ],
+                        fields:
+                            embedFields,
 
                         footer: {
                             text:
