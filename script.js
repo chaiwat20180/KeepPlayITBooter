@@ -1206,6 +1206,26 @@
             $('#staminaVolumePercent').text(`${Math.round(volume * 100)}%`);
         }
 
+
+        const globalImage =
+                normalizeDiscordImageUrl(
+                    discordSettings.customImageUrl || ''
+                );
+
+            if (globalImage) {
+
+                return {
+                    url: globalImage,
+                    source: 'global'
+                };
+            }
+
+
+            return {
+                url: '',
+                source: 'none'
+            };
+        }
         // Toggle played state for an order (mark/unmark played) and persist
         function togglePlayed(id) {
 
@@ -1262,22 +1282,21 @@
                         .addClass('hidden');
 
 
-                    // ==================================
-                    // Existing Order Image Preview
-                    // ==================================
+                    // ==========================================
+                    // Existing image preview
+                    // Order Custom > Global
+                    // ==========================================
 
-                    const existingImage =
-                        normalizeDiscordImageUrl(
-                            ord.discordImageUrl || ''
-                        );
+                    const effectiveImage =
+                        getEffectiveDiscordImage(ord);
 
 
-                    if (existingImage) {
+                    if (effectiveImage.url) {
 
                         $('#discordUploadPreview')
                             .attr(
                                 'src',
-                                existingImage
+                                effectiveImage.url
                             )
                             .removeClass('hidden');
 
@@ -1286,17 +1305,29 @@
                             .removeClass('hidden');
 
 
-                        setDiscordUploadStatus(
-                            'จะใช้รูป Custom ของ Order นี้ หากไม่เลือกรูปใหม่',
-                            'info'
-                        );
+                        if (
+                            effectiveImage.source === 'order'
+                        ) {
+
+                            setDiscordUploadStatus(
+                                'กำลังใช้ Custom image ของ Order นี้ หากไม่เลือกรูปใหม่',
+                                'info'
+                            );
+
+                        } else {
+
+                            setDiscordUploadStatus(
+                                'Order นี้ไม่มี Custom image — กำลังใช้รูปจาก Global Setting',
+                                'info'
+                            );
+                        }
 
                     }
 
                     else {
 
                         setDiscordUploadStatus(
-                            'เลือกรูปใหม่ หรือกดส่งโดยไม่เลือกรูป',
+                            'ยังไม่มีรูป Order หรือ Global — เลือกรูปใหม่หรือกดส่งโดยไม่ใช้รูป',
                             'info'
                         );
                     }
@@ -1745,25 +1776,46 @@
 
         else {
 
+            const effectiveImage =
+                getEffectiveDiscordImage(order);
+
+
             imageUrl =
-                normalizeDiscordImageUrl(
-                    order.discordImageUrl || ''
-                );
+                effectiveImage.url;
 
 
-            if (!imageUrl) {
-
-                imageUrl =
-                    normalizeDiscordImageUrl(
-                        discordSettings.customImageUrl || ''
-                    );
-            }
+            console.log(
+                '[Discord] Existing image source:',
+                effectiveImage.source
+            );
 
 
             console.log(
                 '[Discord] Existing image:',
                 imageUrl || '(none)'
             );
+
+
+            if (
+                effectiveImage.source === 'order'
+            ) {
+
+                setDiscordUploadStatus(
+                    'กำลังใช้ Custom image ของ Order นี้...',
+                    'info'
+                );
+
+            }
+
+            else if (
+                effectiveImage.source === 'global'
+            ) {
+
+                setDiscordUploadStatus(
+                    'กำลังใช้รูปจาก Global Setting...',
+                    'info'
+                );
+            }
         }
 
 
@@ -3775,7 +3827,7 @@
                     "KeepPlayIT Master",
 
                 avatar_url:
-                    "https://i2.wp.com/images.genshin-builds.com/genshin/characters/odette/image.png",
+                    "https://cdn-icons-png.flaticon.com/512/808/808476.png",
 
                 content:
                     baseContent,
