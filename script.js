@@ -3712,46 +3712,62 @@
         
 
             const embedFields = [
+
                 {
                     name: "🎮 ชื่อเกม",
-                    value: gameName || "-",
-                    inline: true
+                    value:
+                        `\`\`\`\n${gameName || "-"}\n\`\`\``,
+                    inline: false
                 },
 
                 {
                     name: "👤 ชื่อลูกค้า",
-                    value: customerName || "-",
-                    inline: true
+                    value:
+                        `\`\`\`\n${customerName || "-"}\n\`\`\``,
+                    inline: false
                 },
 
                 {
                     name: "🆔 ไอดี",
-                    value: maskedId || "-",
+                    value:
+                        `\`\`\`\n${maskedId || "-"}\n\`\`\``,
                     inline: false
                 },
 
                 {
                     name: "📅 วันที่และเวลา",
-                    value: timeString,
-                    inline: false
-                },
-
-                {
-                    name: "📊 สถานะ",
                     value:
-                        "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```",
+                        `\`\`\`\n${timeString}\n\`\`\``,
                     inline: false
                 }
-            ];
 
-            if (additionalDetail) {
+            ];
+            const safeAdditionalDetail =
+            additionalDetail
+                .replace(/```/g, '')
+                .trim();
+
+            if (safeAdditionalDetail) {
 
                 embedFields.push({
                     name: "📝 รายละเอียดที่ทำไป",
-                    value: additionalDetail,
+                    value:
+                        `\`\`\`\n${safeAdditionalDetail}\n\`\`\``,
                     inline: false
                 });
+
             }
+
+           embedFields.push({
+
+                name: "📊 สถานะ",
+
+                value:
+                    "```yaml\nดำเนินการเล่นรายวันเสร็จสิ้นแล้ว\n```",
+
+                inline: false
+
+            });
 
             const payload = {
 
