@@ -1824,7 +1824,7 @@
 
 
         await notifyDiscordDailyPlayed(
-
+            
             order.gameName,
 
             order.customerName,
@@ -3719,6 +3719,11 @@
             const baseContent =
                 `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`
                     .trim();
+
+            const additionalDetail =
+            String(
+                options.detail || ''
+            ).trim();
 
             const embedFields = [
                 {
