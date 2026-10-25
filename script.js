@@ -1372,41 +1372,179 @@
         }
 
         async function uploadDiscordImageToThirdParty(file) {
+
             if (!file) return '';
 
-            const apiKey = (discordSettings.imgbbApiKey || '').trim();
+            const apiKey =
+                String(discordSettings.imgbbApiKey || '').trim();
+
             if (!apiKey) {
                 throw new Error('MISSING_IMGBB_KEY');
             }
 
+            // จำกัดประเภทไฟล์
+            if (!file.type.startsWith('image/')) {
+                throw new Error('INVALID_IMAGE_TYPE');
+            }
+
+            // ตัวอย่างจำกัด 10 MB
+            const MAX_SIZE = 10 * 1024 * 1024;
+
+            if (file.size > MAX_SIZE) {
+                throw new Error('IMAGE_TOO_LARGE');
+            }
+
+
             const base64 = await new Promise((resolve, reject) => {
+
                 const reader = new FileReader();
-                reader.onload = function (event) {
-                    const result = event.target && event.target.result ? event.target.result : '';
-                    resolve(result.split(',')[1] || '');
+
+                reader.onload = event => {
+
+                    const result =
+                        event.target?.result || '';
+
+                    const base64Data =
+                        result.split(',')[1] || '';
+
+                    if (!base64Data) {
+                        reject(
+                            new Error('FILE_READ_FAILED')
+                        );
+                        return;
+                    }
+
+                    resolve(base64Data);
                 };
-                reader.onerror = reject;
+
+                reader.onerror = () => {
+                    reject(
+                        new Error('FILE_READ_FAILED')
+                    );
+                };
+
                 reader.readAsDataURL(file);
             });
 
-            const formData = new FormData();
-            formData.append('key', apiKey);
-            formData.append('image', base64);
 
-            const response = await fetch('https://api.imgbb.com/1/upload', {
-                method: 'POST',
-                body: formData
-            });
+            const formData =
+                new FormData();
 
-            const json = await response.json();
-            if (!response.ok || !json || !json.data || !json.data.url) {
-                throw new Error(json && json.error ? json.error.message : 'UPLOAD_FAILED');
+            formData.append(
+                'key',
+                apiKey
+            );
+
+            formData.append(
+                'image',
+                base64
+            );
+
+
+            // ==========================================
+            // Timeout
+            // ==========================================
+
+            const controller =
+                new AbortController();
+
+            const timeoutId =
+                setTimeout(
+                    () => controller.abort(),
+                    20000
+                );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        'https://api.imgbb.com/1/upload',
+                        {
+                            method: 'POST',
+                            body: formData,
+                            signal: controller.signal
+                        }
+                    );
+
+
+                const text =
+                    await response.text();
+
+
+                let json;
+
+                try {
+                    json = JSON.parse(text);
+                } catch {
+                    throw new Error(
+                        'IMGBB_INVALID_RESPONSE'
+                    );
+                }
+
+
+                if (
+                    !response.ok ||
+                    !json?.data?.url
+                ) {
+
+                    throw new Error(
+                        json?.error?.message ||
+                        `IMGBB_HTTP_${response.status}`
+                    );
+                }
+
+
+                return json.data.url;
+
+            } catch (error) {
+
+                if (
+                    error.name ===
+                    'AbortError'
+                ) {
+
+                    throw new Error(
+                        'IMGBB_TIMEOUT'
+                    );
+                }
+
+                throw error;
+
+            } finally {
+
+                clearTimeout(timeoutId);
+
             }
-
-            return json.data.url;
         }
 
+        let discordUploadSending = false;
+
         async function sendDiscordAfterUpload() {
+
+    // ==========================================
+    // Prevent duplicate send
+    // ==========================================
+
+    if (discordUploadSending) {
+        return;
+    }
+
+    discordUploadSending = true;
+
+
+    const sendButton =
+        document.getElementById('discordUploadSendButton');
+
+
+    if (sendButton) {
+
+        sendButton.disabled = true;
+
+        sendButton.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังส่ง...';
+    }
+
 
     const fileInput =
         document.getElementById('discordUploadInput');
@@ -1416,36 +1554,53 @@
         fileInput.files &&
         fileInput.files[0];
 
+
     const order =
         orders.find(
             o => o.id == pendingDiscordUploadOrderId
         );
 
+
+    // ==========================================
+    // Order not found
+    // ==========================================
+
     if (!order) {
 
+        discordUploadSending = false;
+
+        if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.innerHTML = 'ส่งทันที';
+        }
+
+
         closeDiscordUploadModal();
+
 
         showToast(
             'ไม่พบข้อมูล Order นี้',
             'error'
         );
 
+
         return;
     }
 
 
     // ==========================================
-    // Discord settings
+    // Discord Settings
     // Order > Global
     // ==========================================
 
     const webhookUrl =
-        (order.discordWebhooks || '').trim() ||
-        (discordSettings.webhooks || '').trim();
+        String(order.discordWebhooks || '').trim() ||
+        String(discordSettings.webhooks || '').trim();
+
 
     const userId =
-        (order.discordUserId || '').trim() ||
-        (discordSettings.discordId || '').trim();
+        String(order.discordUserId || '').trim() ||
+        String(discordSettings.discordId || '').trim();
 
 
     if (!webhookUrl) {
@@ -1455,10 +1610,24 @@
             'error'
         );
 
+
         showToast(
             'ยังไม่มี Discord Webhook',
             'error'
         );
+
+
+        discordUploadSending = false;
+
+
+        if (sendButton) {
+
+            sendButton.disabled = false;
+
+            sendButton.innerHTML =
+                'ส่งทันที';
+        }
+
 
         return;
     }
@@ -1470,7 +1639,7 @@
 
 
         // ==========================================
-        // Upload new image
+        // New image selected
         // ==========================================
 
         if (file) {
@@ -1481,9 +1650,15 @@
             );
 
 
+            const uploadedUrl =
+                await uploadDiscordImageToThirdParty(
+                    file
+                );
+
+
             imageUrl =
                 normalizeDiscordImageUrl(
-                    await uploadDiscordImageToThirdParty(file)
+                    uploadedUrl
                 );
 
 
@@ -1495,11 +1670,11 @@
             }
 
 
-            // // Save image for this Order
-            // order.discordImageUrl =
-            //     imageUrl;
-
-            // saveData();
+            // ======================================
+            // IMPORTANT
+            // รูปนี้ใช้เฉพาะการส่งครั้งนี้
+            // ห้าม save ลง order.discordImageUrl
+            // ======================================
 
 
             console.log(
@@ -1509,7 +1684,7 @@
 
 
             setDiscordUploadStatus(
-                'อัปโหลด ImgBB สำเร็จ กำลังส่ง Discord...',
+                'อัปโหลดรูปสำเร็จ กำลังส่ง Discord...',
                 'success'
             );
 
@@ -1518,19 +1693,19 @@
 
         // ==========================================
         // No new image
+        // Order Custom > Global
         // ==========================================
 
         else {
 
-            // Order image first
             imageUrl =
-            normalizeDiscordImageUrl(
-                order.discordImageUrl || ''
-            );
+                normalizeDiscordImageUrl(
+                    order.discordImageUrl || ''
+                );
 
 
-            // Fallback Global
             if (!imageUrl) {
+
                 imageUrl =
                     normalizeDiscordImageUrl(
                         discordSettings.customImageUrl || ''
@@ -1572,7 +1747,7 @@
 
         console.log(
             '[Discord] User ID:',
-            userId
+            userId || '(none)'
         );
 
         console.log(
@@ -1586,7 +1761,7 @@
         );
 
         console.log(
-            '[Discord] File:',
+            '[Discord] Selected file:',
             file ? file.name : '(none)'
         );
 
@@ -1599,26 +1774,58 @@
         // SEND DISCORD
         // ==========================================
 
+        setDiscordUploadStatus(
+            'กำลังส่งข้อความไป Discord...',
+            'info'
+        );
+
+
         await notifyDiscordDailyPlayed(
+
             order.gameName,
+
             order.customerName,
-            order.username || 'unknown',
+
+            order.username ||
+                order.customerName ||
+                'unknown',
+
             {
-                enabled: true,
-                webhooks: webhookUrl,
-                userId: userId,
-                customImageUrl: imageUrl,
-                imageFile: file || null
+
+                enabled:
+                    true,
+
+
+                // Order Webhook > Global
+                webhooks:
+                    webhookUrl,
+
+
+                // Order User ID > Global
+                userId:
+                    userId,
+
+
+                // Use ImgBB / Order / Global URL
+                customImageUrl:
+                    imageUrl,
+
+
+                // IMPORTANT:
+                // ไม่ส่ง file ซ้ำไป Discord
+                imageFile:
+                    null
             }
         );
 
 
         // ==========================================
-        // IMPORTANT
-        // Discord sent successfully
+        // Success
         // ==========================================
 
-        order.played = true;
+        order.played =
+            true;
+
 
         saveData();
 
@@ -1628,21 +1835,10 @@
         );
 
 
-        closeDiscordUploadModal();
-
-
-        try {
-            renderOrders();
-        } catch (e) {
-            console.warn(e);
-        }
-
-
-        try {
-            renderDashboard();
-        } catch (e) {
-            console.warn(e);
-        }
+        setDiscordUploadStatus(
+            'ส่ง Discord สำเร็จ',
+            'success'
+        );
 
 
         showToast(
@@ -1650,7 +1846,41 @@
             'success'
         );
 
+
+        closeDiscordUploadModal();
+
+
+        try {
+
+            renderOrders();
+
+        } catch (e) {
+
+            console.warn(
+                '[Discord] renderOrders failed:',
+                e
+            );
+        }
+
+
+        try {
+
+            renderDashboard();
+
+        } catch (e) {
+
+            console.warn(
+                '[Discord] renderDashboard failed:',
+                e
+            );
+        }
+
     }
+
+
+    // ==========================================
+    // ERROR
+    // ==========================================
 
     catch (error) {
 
@@ -1660,38 +1890,155 @@
         );
 
 
+        let message =
+            'เกิดข้อผิดพลาด กรุณาลองใหม่';
+
+
+        switch (
+            error?.message
+        ) {
+
+            case 'IMGBB_TIMEOUT':
+
+                message =
+                    'ImgBB ตอบสนองช้าเกินไป กรุณาลองอัปโหลดใหม่';
+
+                break;
+
+
+            case 'IMAGE_TOO_LARGE':
+
+                message =
+                    'รูปภาพมีขนาดใหญ่เกินกำหนด';
+
+                break;
+
+
+            case 'INVALID_IMAGE_TYPE':
+
+                message =
+                    'ไฟล์ที่เลือกไม่ใช่รูปภาพ';
+
+                break;
+
+
+            case 'MISSING_IMGBB_KEY':
+
+                message =
+                    'ยังไม่ได้ตั้งค่า ImgBB API Key';
+
+                break;
+
+
+            case 'IMG_BB_URL_INVALID':
+
+                message =
+                    'ImgBB อัปโหลดสำเร็จ แต่ URL รูปภาพไม่ถูกต้อง';
+
+                break;
+
+
+            case 'FILE_READ_FAILED':
+
+                message =
+                    'ไม่สามารถอ่านไฟล์รูปภาพได้';
+
+                break;
+
+
+            case 'IMGBB_INVALID_RESPONSE':
+
+                message =
+                    'ImgBB ส่งข้อมูลตอบกลับไม่ถูกต้อง';
+
+                break;
+
+
+            default:
+
+                if (
+                    String(
+                        error?.message || ''
+                    ).includes(
+                        'Discord webhook failed'
+                    )
+                ) {
+
+                    message =
+                        'อัปโหลดรูปสำเร็จ แต่ส่งข้อความไป Discord ไม่สำเร็จ';
+
+                }
+
+                else if (
+                    error?.message
+                ) {
+
+                    message =
+                        `เกิดข้อผิดพลาด: ${error.message}`;
+                }
+
+                break;
+        }
+
+
         setDiscordUploadStatus(
-            `ส่ง Discord ไม่สำเร็จ: ${
-                error?.message || 'Unknown error'
-            }`,
+            message,
             'error'
         );
 
 
         showToast(
-            'ส่ง Discord ไม่สำเร็จ กรุณาลองใหม่',
+            message,
             'error'
         );
 
 
         // ==========================================
-        // VERY IMPORTANT
-        // ถ้า Discord ไม่สำเร็จ
-        // ให้ Played กลับเป็น false
+        // Discord ไม่สำเร็จ
+        // Played = false
         // ==========================================
 
-        order.played = false;
+        order.played =
+            false;
+
 
         saveData();
 
 
         try {
+
             renderOrders();
+
         } catch (e) {}
 
+
         try {
+
             renderDashboard();
+
         } catch (e) {}
+    }
+
+
+    // ==========================================
+    // ALWAYS RUN
+    // ==========================================
+
+    finally {
+
+        discordUploadSending =
+            false;
+
+
+        if (sendButton) {
+
+            sendButton.disabled =
+                false;
+
+
+            sendButton.innerHTML =
+                'ส่งทันที';
+        }
     }
 }
 
