@@ -1685,6 +1685,8 @@
         // New image selected
         // ==========================================
 
+        let imageFileForDiscord = null;
+
         if (file) {
 
             setDiscordUploadStatus(
@@ -1692,45 +1694,47 @@
                 'info'
             );
 
+            try {
 
-            const uploadedUrl =
-                await uploadDiscordImageToThirdParty(
-                    file
+                const uploadedUrl =
+                    await uploadDiscordImageToThirdParty(file);
+
+                imageUrl =
+                    normalizeDiscordImageUrl(uploadedUrl);
+
+                if (!imageUrl) {
+                    throw new Error('IMG_BB_URL_INVALID');
+                }
+
+                console.log(
+                    '[Discord] ImgBB upload success:',
+                    imageUrl
                 );
 
-
-            imageUrl =
-                normalizeDiscordImageUrl(
-                    uploadedUrl
+                setDiscordUploadStatus(
+                    'อัปโหลด ImgBB สำเร็จ กำลังส่ง Discord...',
+                    'success'
                 );
 
+            } catch (uploadError) {
 
-            if (!imageUrl) {
+                console.warn(
+                    '[ImgBB] Upload failed, fallback to Discord attachment:',
+                    uploadError
+                );
 
-                throw new Error(
-                    'IMG_BB_URL_INVALID'
+                // ImgBB ใช้ไม่ได้
+                // ส่งไฟล์จริงตรงเข้า Discord แทน
+                imageUrl = '';
+
+                imageFileForDiscord =
+                    file;
+
+                setDiscordUploadStatus(
+                    'ImgBB ไม่ตอบสนอง กำลังส่งรูปตรงไป Discord...',
+                    'info'
                 );
             }
-
-
-            // ======================================
-            // IMPORTANT
-            // รูปนี้ใช้เฉพาะการส่งครั้งนี้
-            // ห้าม save ลง order.discordImageUrl
-            // ======================================
-
-
-            console.log(
-                '[Discord] ImgBB upload success:',
-                imageUrl
-            );
-
-
-            setDiscordUploadStatus(
-                'อัปโหลดรูปสำเร็จ กำลังส่ง Discord...',
-                'success'
-            );
-
         }
 
 
@@ -1767,12 +1771,14 @@
         // Final fallback
         // ==========================================
 
-        if (!imageUrl) {
+        if (
+            !imageUrl &&
+            !imageFileForDiscord
+        ) {
 
             imageUrl =
                 'https://media1.tenor.com/m/YwGq3QkP2s8AAAAd/check-mark-button-joypixels.gif';
         }
-
 
         console.log(
             '========================================'
@@ -1834,7 +1840,7 @@
                 webhooks: webhookUrl,
                 userId: userId,
                 customImageUrl: imageUrl,
-                imageFile: null,
+                imageFile: imageFileForDiscord,
 
                 detail: discordDetail
             }
