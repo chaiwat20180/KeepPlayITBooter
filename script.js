@@ -1824,43 +1824,19 @@
 
 
         await notifyDiscordDailyPlayed(
-            
             order.gameName,
-
             order.customerName,
-
             order.username ||
                 order.customerName ||
                 'unknown',
-
             {
+                enabled: true,
+                webhooks: webhookUrl,
+                userId: userId,
+                customImageUrl: imageUrl,
+                imageFile: null,
 
-                enabled:
-                    true,
-
-
-                // Order Webhook > Global
-                webhooks:
-                    webhookUrl,
-
-
-                // Order User ID > Global
-                userId:
-                    userId,
-
-
-                // Use ImgBB / Order / Global URL
-                customImageUrl:
-                    imageUrl,
-
-
-                // IMPORTANT:
-                // ไม่ส่ง file ซ้ำไป Discord
-                imageFile:
-                    null,
-                
-                detail:
-                    discordDetail
+                detail: discordDetail
             }
         );
 
@@ -3667,7 +3643,14 @@
                 pingUserId
                     ? `<@${pingUserId}>`
                     : '';
+            // ==========================================
+            // Additional detail from upload popup
+            // ==========================================
 
+            const additionalDetail =
+                String(
+                    options.detail || ''
+                ).trim();
             // ==========================================
             // Image
             //
@@ -3720,10 +3703,7 @@
                 `✅ อัปเดตสถานะ: เล่นรายวันเรียบร้อย ${pingText}`
                     .trim();
 
-            const additionalDetail =
-            String(
-                options.detail || ''
-            ).trim();
+        
 
             const embedFields = [
                 {
