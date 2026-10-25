@@ -1373,150 +1373,257 @@
 
         async function uploadDiscordImageToThirdParty(file) {
 
-            if (!file) return '';
-
-            const apiKey =
-                String(discordSettings.imgbbApiKey || '').trim();
-
-            if (!apiKey) {
-                throw new Error('MISSING_IMGBB_KEY');
-            }
-
-            // จำกัดประเภทไฟล์
-            if (!file.type.startsWith('image/')) {
-                throw new Error('INVALID_IMAGE_TYPE');
-            }
-
-            // ตัวอย่างจำกัด 10 MB
-            const MAX_SIZE = 10 * 1024 * 1024;
-
-            if (file.size > MAX_SIZE) {
-                throw new Error('IMAGE_TOO_LARGE');
-            }
+    if (!file) {
+        return '';
+    }
 
 
-            const base64 = await new Promise((resolve, reject) => {
+    const apiKey =
+        String(
+            discordSettings.imgbbApiKey || ''
+        ).trim();
 
-                const reader = new FileReader();
 
-                reader.onload = event => {
+    if (!apiKey) {
 
-                    const result =
-                        event.target?.result || '';
+        throw new Error(
+            'MISSING_IMGBB_KEY'
+        );
+    }
 
-                    const base64Data =
-                        result.split(',')[1] || '';
 
-                    if (!base64Data) {
-                        reject(
-                            new Error('FILE_READ_FAILED')
+    // ==========================================
+    // Validate image
+    // ==========================================
+
+    if (
+        !file.type ||
+        !file.type.startsWith('image/')
+    ) {
+
+        throw new Error(
+            'INVALID_IMAGE_TYPE'
+        );
+    }
+
+
+    // 10 MB
+    const MAX_SIZE =
+        10 * 1024 * 1024;
+
+
+    if (
+        file.size >
+        MAX_SIZE
+    ) {
+
+        throw new Error(
+            'IMAGE_TOO_LARGE'
+        );
+    }
+
+
+    // ==========================================
+    // File -> Base64
+    // ==========================================
+
+    const base64 =
+        await new Promise(
+            (resolve, reject) => {
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        const result =
+                            event.target?.result || '';
+
+
+                        const base64Data =
+                            String(result)
+                                .split(',')[1] || '';
+
+
+                        if (!base64Data) {
+
+                            reject(
+                                new Error(
+                                    'FILE_READ_FAILED'
+                                )
+                            );
+
+                            return;
+                        }
+
+
+                        resolve(
+                            base64Data
                         );
-                        return;
-                    }
-
-                    resolve(base64Data);
-                };
-
-                reader.onerror = () => {
-                    reject(
-                        new Error('FILE_READ_FAILED')
-                    );
-                };
-
-                reader.readAsDataURL(file);
-            });
+                    };
 
 
-            const formData =
-                new FormData();
+                reader.onerror =
+                    function () {
 
-            formData.append(
-                'key',
-                apiKey
+                        reject(
+                            new Error(
+                                'FILE_READ_FAILED'
+                            )
+                        );
+                    };
+
+
+                reader.readAsDataURL(
+                    file
+                );
+            }
+        );
+
+
+    // ==========================================
+    // ImgBB FormData
+    // ==========================================
+
+    const formData =
+        new FormData();
+
+
+    formData.append(
+        'key',
+        apiKey
+    );
+
+
+    formData.append(
+        'image',
+        base64
+    );
+
+
+    // ==========================================
+    // Timeout 20 seconds
+    // ==========================================
+
+    const controller =
+        new AbortController();
+
+
+    const timeoutId =
+        setTimeout(
+            () => {
+
+                controller.abort();
+
+            },
+            20000
+        );
+
+
+    try {
+
+        const response =
+            await fetch(
+                'https://api.imgbb.com/1/upload',
+                {
+                    method:
+                        'POST',
+
+                    body:
+                        formData,
+
+                    signal:
+                        controller.signal
+                }
             );
 
-            formData.append(
-                'image',
-                base64
-            );
+
+        const responseText =
+            await response.text();
 
 
-            // ==========================================
-            // Timeout
-            // ==========================================
+        let json;
 
-            const controller =
-                new AbortController();
 
-            const timeoutId =
-                setTimeout(
-                    () => controller.abort(),
-                    20000
+        try {
+
+            json =
+                JSON.parse(
+                    responseText
                 );
 
+        } catch (error) {
 
-            try {
-
-                const response =
-                    await fetch(
-                        'https://api.imgbb.com/1/upload',
-                        {
-                            method: 'POST',
-                            body: formData,
-                            signal: controller.signal
-                        }
-                    );
+            console.error(
+                '[ImgBB] Invalid JSON:',
+                responseText
+            );
 
 
-                const text =
-                    await response.text();
-
-
-                let json;
-
-                try {
-                    json = JSON.parse(text);
-                } catch {
-                    throw new Error(
-                        'IMGBB_INVALID_RESPONSE'
-                    );
-                }
-
-
-                if (
-                    !response.ok ||
-                    !json?.data?.url
-                ) {
-
-                    throw new Error(
-                        json?.error?.message ||
-                        `IMGBB_HTTP_${response.status}`
-                    );
-                }
-
-
-                return json.data.url;
-
-            } catch (error) {
-
-                if (
-                    error.name ===
-                    'AbortError'
-                ) {
-
-                    throw new Error(
-                        'IMGBB_TIMEOUT'
-                    );
-                }
-
-                throw error;
-
-            } finally {
-
-                clearTimeout(timeoutId);
-
-            }
+            throw new Error(
+                'IMGBB_INVALID_RESPONSE'
+            );
         }
+
+
+        if (
+            !response.ok ||
+            !json?.data?.url
+        ) {
+
+            console.error(
+                '[ImgBB] Upload failed:',
+                json
+            );
+
+
+            throw new Error(
+                json?.error?.message ||
+                `IMGBB_HTTP_${response.status}`
+            );
+        }
+
+
+        console.log(
+            '[ImgBB] Upload success:',
+            json.data.url
+        );
+
+
+        return (
+            json.data.url
+        );
+
+    }
+
+
+    catch (error) {
+
+        if (
+            error?.name ===
+            'AbortError'
+        ) {
+
+            throw new Error(
+                'IMGBB_TIMEOUT'
+            );
+        }
+
+
+        throw error;
+
+    }
+
+
+    finally {
+
+        clearTimeout(
+            timeoutId
+        );
+    }
+}
 
         let discordUploadSending = false;
 
