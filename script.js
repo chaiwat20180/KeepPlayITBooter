@@ -1377,18 +1377,13 @@
         return '';
     }
 
-
     const apiKey =
         String(
             discordSettings.imgbbApiKey || ''
         ).trim();
 
-
     if (!apiKey) {
-
-        throw new Error(
-            'MISSING_IMGBB_KEY'
-        );
+        throw new Error('MISSING_IMGBB_KEY');
     }
 
 
@@ -1400,142 +1395,72 @@
         !file.type ||
         !file.type.startsWith('image/')
     ) {
-
-        throw new Error(
-            'INVALID_IMAGE_TYPE'
-        );
+        throw new Error('INVALID_IMAGE_TYPE');
     }
 
 
-    // 10 MB
+    // ImgBB API รองรับสูงสุด 32 MB
     const MAX_SIZE =
-        10 * 1024 * 1024;
+        32 * 1024 * 1024;
 
-
-    if (
-        file.size >
-        MAX_SIZE
-    ) {
-
-        throw new Error(
-            'IMAGE_TOO_LARGE'
-        );
+    if (file.size > MAX_SIZE) {
+        throw new Error('IMAGE_TOO_LARGE');
     }
 
 
     // ==========================================
-    // File -> Base64
-    // ==========================================
-
-    const base64 =
-        await new Promise(
-            (resolve, reject) => {
-
-                const reader =
-                    new FileReader();
-
-
-                reader.onload =
-                    function (event) {
-
-                        const result =
-                            event.target?.result || '';
-
-
-                        const base64Data =
-                            String(result)
-                                .split(',')[1] || '';
-
-
-                        if (!base64Data) {
-
-                            reject(
-                                new Error(
-                                    'FILE_READ_FAILED'
-                                )
-                            );
-
-                            return;
-                        }
-
-
-                        resolve(
-                            base64Data
-                        );
-                    };
-
-
-                reader.onerror =
-                    function () {
-
-                        reject(
-                            new Error(
-                                'FILE_READ_FAILED'
-                            )
-                        );
-                    };
-
-
-                reader.readAsDataURL(
-                    file
-                );
-            }
-        );
-
-
-    // ==========================================
-    // ImgBB FormData
+    // Upload file directly
+    // ไม่ต้องแปลงเป็น Base64
     // ==========================================
 
     const formData =
         new FormData();
 
-
-    formData.append(
-        'key',
-        apiKey
-    );
-
-
     formData.append(
         'image',
-        base64
+        file,
+        file.name
     );
 
 
     // ==========================================
-    // Timeout 20 seconds
+    // Timeout 60 seconds
     // ==========================================
 
     const controller =
         new AbortController();
 
-
     const timeoutId =
         setTimeout(
-            () => {
-
-                controller.abort();
-
-            },
-            20000
+            () => controller.abort(),
+            60000
         );
 
 
     try {
 
+        console.log(
+            '[ImgBB] Upload starting:',
+            {
+                name: file.name,
+                type: file.type,
+                sizeMB:
+                    (
+                        file.size /
+                        1024 /
+                        1024
+                    ).toFixed(2)
+            }
+        );
+
+
         const response =
             await fetch(
-                'https://api.imgbb.com/1/upload',
+                `https://api.imgbb.com/1/upload?key=${encodeURIComponent(apiKey)}`,
                 {
-                    method:
-                        'POST',
-
-                    body:
-                        formData,
-
-                    signal:
-                        controller.signal
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
                 }
             );
 
@@ -1545,7 +1470,6 @@
 
 
         let json;
-
 
         try {
 
@@ -1557,10 +1481,9 @@
         } catch (error) {
 
             console.error(
-                '[ImgBB] Invalid JSON:',
+                '[ImgBB] Invalid response:',
                 responseText
             );
-
 
             throw new Error(
                 'IMGBB_INVALID_RESPONSE'
@@ -1570,6 +1493,7 @@
 
         if (
             !response.ok ||
+            !json?.success ||
             !json?.data?.url
         ) {
 
@@ -1578,7 +1502,6 @@
                 json
             );
 
-
             throw new Error(
                 json?.error?.message ||
                 `IMGBB_HTTP_${response.status}`
@@ -1586,18 +1509,21 @@
         }
 
 
+        const imageUrl =
+            String(
+                json.data.url
+            ).trim();
+
+
         console.log(
             '[ImgBB] Upload success:',
-            json.data.url
+            imageUrl
         );
 
 
-        return (
-            json.data.url
-        );
+        return imageUrl;
 
     }
-
 
     catch (error) {
 
@@ -1605,6 +1531,10 @@
             error?.name ===
             'AbortError'
         ) {
+
+            console.error(
+                '[ImgBB] Upload timeout'
+            );
 
             throw new Error(
                 'IMGBB_TIMEOUT'
@@ -1615,7 +1545,6 @@
         throw error;
 
     }
-
 
     finally {
 
@@ -1644,13 +1573,13 @@
         document.getElementById('discordUploadSendButton');
 
 
-    if (sendButton) {
+        if (sendButton) {
 
         sendButton.disabled = true;
 
         sendButton.innerHTML =
             '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังส่ง...';
-    }
+}
 
 
     const fileInput =
@@ -1677,8 +1606,11 @@
         discordUploadSending = false;
 
         if (sendButton) {
+
             sendButton.disabled = false;
-            sendButton.innerHTML = 'ส่งทันที';
+
+            sendButton.innerHTML =
+                '<i class="fa-solid fa-paper-plane mr-2"></i> ส่งทันที';
         }
 
 
@@ -1752,7 +1684,7 @@
         if (file) {
 
             setDiscordUploadStatus(
-                'กำลังอัปโหลดรูปภาพไป ImgBB...',
+                `กำลังอัปโหลดรูปภาพไป ImgBB... (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
                 'info'
             );
 
