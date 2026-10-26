@@ -3908,7 +3908,7 @@
                     "KeepPlayIT Master",
 
                 avatar_url:
-                    "https://cdn-icons-png.flaticon.com/512/808/808476.png",
+                    "https://i2.wp.com/images.genshin-builds.com/genshin/characters/odette/image.png",
 
                 content:
                     baseContent,
