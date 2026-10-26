@@ -1207,7 +1207,28 @@
         }
 
 
-        const globalImage =
+        // ==========================================
+        // Discord Image Priority
+        // Order Custom > Global > None
+        // ==========================================
+
+        function getEffectiveDiscordImage(order) {
+
+            const orderImage =
+                normalizeDiscordImageUrl(
+                    order?.discordImageUrl || ''
+                );
+
+            if (orderImage) {
+
+                return {
+                    url: orderImage,
+                    source: 'order'
+                };
+            }
+
+
+            const globalImage =
                 normalizeDiscordImageUrl(
                     discordSettings.customImageUrl || ''
                 );
@@ -1226,32 +1247,52 @@
                 source: 'none'
             };
         }
-        // Toggle played state for an order (mark/unmark played) and persist
+
+        
         function togglePlayed(id) {
 
             const ord =
-                orders.find(o => o.id == id);
+                orders.find(
+                    o => o.id == id
+                );
 
-            if (!ord) return;
+
+            if (!ord) {
+                return;
+            }
 
 
             // ==========================================
-            // Unplayed → เปิด Discord dialog
+            // Unplayed → เปิด Discord popup
             // ==========================================
 
             if (!ord.played) {
 
-                // Order Webhook > Global Webhook
+                // --------------------------------------
+                // Webhook
+                // Order > Global
+                // --------------------------------------
+
                 const orderWebhook =
-                    (ord.discordWebhooks || '').trim();
+                    String(
+                        ord.discordWebhooks || ''
+                    ).trim();
+
 
                 const globalWebhook =
-                    (discordSettings.webhooks || '').trim();
+                    String(
+                        discordSettings.webhooks || ''
+                    ).trim();
+
 
                 const effectiveWebhook =
                     orderWebhook ||
                     globalWebhook;
 
+
+                // ======================================
+                // ถ้ามี Discord Webhook
+                // ======================================
 
                 if (effectiveWebhook) {
 
@@ -1259,17 +1300,25 @@
                         ord.id;
 
 
+                    // ----------------------------------
+                    // Popup title
+                    // ----------------------------------
+
                     $('#discordUploadOrderTitle')
                         .text(
                             `${ord.customerName} - ${ord.gameName}`
                         );
 
 
-                    $('#discordUploadModal')
-                        .removeClass('hidden');
-
+                    // ----------------------------------
+                    // Clear old input
+                    // ----------------------------------
 
                     $('#discordUploadInput')
+                        .val('');
+
+
+                    $('#discordUploadDetail')
                         .val('');
 
 
@@ -1282,13 +1331,15 @@
                         .addClass('hidden');
 
 
-                    // ==========================================
-                    // Existing image preview
-                    // Order Custom > Global
-                    // ==========================================
+                    // ----------------------------------
+                    // Image priority
+                    // Order > Global
+                    // ----------------------------------
 
                     const effectiveImage =
-                        getEffectiveDiscordImage(ord);
+                        getEffectiveDiscordImage(
+                            ord
+                        );
 
 
                     if (effectiveImage.url) {
@@ -1306,7 +1357,8 @@
 
 
                         if (
-                            effectiveImage.source === 'order'
+                            effectiveImage.source ===
+                            'order'
                         ) {
 
                             setDiscordUploadStatus(
@@ -1314,7 +1366,12 @@
                                 'info'
                             );
 
-                        } else {
+                        }
+
+                        else if (
+                            effectiveImage.source ===
+                            'global'
+                        ) {
 
                             setDiscordUploadStatus(
                                 'Order นี้ไม่มี Custom image — กำลังใช้รูปจาก Global Setting',
@@ -1327,12 +1384,21 @@
                     else {
 
                         setDiscordUploadStatus(
-                            'ยังไม่มีรูป Order หรือ Global — เลือกรูปใหม่หรือกดส่งโดยไม่ใช้รูป',
+                            'ยังไม่มีรูป Custom ของ Order หรือ Global — เลือกรูปใหม่หรือกดส่งโดยไม่เลือกรูป',
                             'info'
                         );
                     }
 
 
+                    // ----------------------------------
+                    // Open popup
+                    // ----------------------------------
+
+                    $('#discordUploadModal')
+                        .removeClass('hidden');
+
+
+                    // จบ flow เปิด popup
                     return;
                 }
             }
@@ -1342,17 +1408,32 @@
             // Played → Unplayed
             // ==========================================
 
-            ord.played = false;
+            ord.played =
+                false;
+
 
             saveData();
 
-            try {
-                renderOrders();
-            } catch (e) {}
 
             try {
+
+                renderOrders();
+
+            } catch (e) {
+
+                console.warn(e);
+            }
+
+
+            try {
+
                 renderDashboard();
-            } catch (e) {}
+
+            } catch (e) {
+
+                console.warn(e);
+            }
+
 
             showToast(
                 'ยกเลิกสถานะเล่นแล้ว',
